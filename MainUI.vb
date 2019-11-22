@@ -1,9 +1,14 @@
 ﻿Public Class MainUI
+    Public loggingEnabled As Boolean
+    Public guiActive As Boolean
+    Delegate Sub StringArgReturningVoidDelegate([text] As String)
 
     Private Sub MainUI_Load(sender As Object, e As EventArgs) Handles MyBase.Load
         ' main entry point
+        Loggingenabled = True
+        guiActive = True
         Call multiControls()
-
+        addLOG("GUI Activated")
     End Sub
 
     Private Sub multiControls()
@@ -34,6 +39,47 @@
             QueryContainer1.btnJson.Visible = False
 
 
+        End If
+    End Sub
+    Public Sub addLOG(ByVal a$, Optional ByVal suppressDT As Boolean = False, Optional ByVal forceLog As Boolean = False)
+        On Error GoTo errorcatch
+        'logginGenabled = True
+
+
+forFileOnly:
+        If suppressDT = False Then a = Now.ToString("MM/dd hh:mm:ss") + ": " + a
+
+        Dim fileN$ = "armxls_log.txt"
+
+        If loggingEnabled = False And forceLog = False Then GoTo writelineOnly
+
+        Dim FF As Integer = FreeFile()
+
+        If Dir(fileN) = "" Then
+            FileOpen(FF, fileN, OpenMode.Output, OpenAccess.Write, OpenShare.Shared)
+        Else
+            FileOpen(FF, fileN, OpenMode.Append, OpenAccess.Write, OpenShare.Shared)
+        End If
+
+
+        Print(FF, a + vbCrLf)
+        FileClose(FF)
+
+writelineOnly:
+        If guiActive = True Then logTEXT(a + vbCrLf)
+errorcatch:
+    End Sub
+
+    Public Sub logTEXT(ByVal a$)
+        If Me.logTB.InvokeRequired Then
+            'this delegate nonsense is to ensure background thread request is accepted by the logTB control
+            Dim d As New StringArgReturningVoidDelegate(AddressOf logTEXT)
+            Me.Invoke(d, New Object() {a})
+        Else
+            logTB.AppendText(a)
+            logTB.SelectionStart = logTB.Text.Length
+            logTB.ScrollToCaret()
+            logTB.Refresh()
         End If
     End Sub
 

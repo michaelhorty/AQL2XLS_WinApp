@@ -30,9 +30,9 @@ Partial Class MainUI
         Me.Label2 = New System.Windows.Forms.Label()
         Me.TextBox2 = New System.Windows.Forms.TextBox()
         Me.Label3 = New System.Windows.Forms.Label()
+        Me.logTB = New System.Windows.Forms.TextBox()
         Me.QueryContainer2 = New AQL2XLS_WinApp.QueryContainer()
         Me.QueryContainer1 = New AQL2XLS_WinApp.QueryContainer()
-        Me.TextBox3 = New System.Windows.Forms.TextBox()
         CType(Me.PictureBox1, System.ComponentModel.ISupportInitialize).BeginInit()
         Me.SuspendLayout()
         '
@@ -50,7 +50,7 @@ Partial Class MainUI
         Me.CheckBox1.AutoSize = True
         Me.CheckBox1.Font = New System.Drawing.Font("Segoe UI", 12.0!, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, CType(0, Byte))
         Me.CheckBox1.ForeColor = System.Drawing.Color.FromArgb(CType(CType(0, Byte), Integer), CType(CType(0, Byte), Integer), CType(CType(64, Byte), Integer))
-        Me.CheckBox1.Location = New System.Drawing.Point(46, 420)
+        Me.CheckBox1.Location = New System.Drawing.Point(46, 413)
         Me.CheckBox1.Name = "CheckBox1"
         Me.CheckBox1.Size = New System.Drawing.Size(114, 25)
         Me.CheckBox1.TabIndex = 3
@@ -59,12 +59,13 @@ Partial Class MainUI
         '
         'TextBox1
         '
-        Me.TextBox1.Font = New System.Drawing.Font("Segoe UI", 9.75!, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, CType(0, Byte))
+        Me.TextBox1.Font = New System.Drawing.Font("Segoe UI", 8.25!, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, CType(0, Byte))
         Me.TextBox1.ForeColor = System.Drawing.Color.FromArgb(CType(CType(0, Byte), Integer), CType(CType(0, Byte), Integer), CType(CType(64, Byte), Integer))
         Me.TextBox1.Location = New System.Drawing.Point(59, 110)
         Me.TextBox1.Name = "TextBox1"
-        Me.TextBox1.Size = New System.Drawing.Size(131, 25)
+        Me.TextBox1.Size = New System.Drawing.Size(131, 22)
         Me.TextBox1.TabIndex = 4
+        Me.TextBox1.Text = "demo"
         '
         'Label1
         '
@@ -90,12 +91,13 @@ Partial Class MainUI
         '
         'TextBox2
         '
-        Me.TextBox2.Font = New System.Drawing.Font("Segoe UI", 9.75!, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, CType(0, Byte))
+        Me.TextBox2.Font = New System.Drawing.Font("Segoe UI", 8.25!, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, CType(0, Byte))
         Me.TextBox2.ForeColor = System.Drawing.Color.FromArgb(CType(CType(0, Byte), Integer), CType(CType(0, Byte), Integer), CType(CType(64, Byte), Integer))
         Me.TextBox2.Location = New System.Drawing.Point(12, 170)
         Me.TextBox2.Name = "TextBox2"
-        Me.TextBox2.Size = New System.Drawing.Size(178, 25)
+        Me.TextBox2.Size = New System.Drawing.Size(178, 22)
         Me.TextBox2.TabIndex = 7
+        Me.TextBox2.Text = "7a9665138fc1df5789ac85698edc544acc9331ee8ece347e5cabb53f616a78dd"
         '
         'Label3
         '
@@ -107,6 +109,17 @@ Partial Class MainUI
         Me.Label3.Size = New System.Drawing.Size(51, 17)
         Me.Label3.TabIndex = 8
         Me.Label3.Text = "API KEY"
+        '
+        'logTB
+        '
+        Me.logTB.Font = New System.Drawing.Font("Segoe UI", 8.25!, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, CType(0, Byte))
+        Me.logTB.ForeColor = System.Drawing.Color.FromArgb(CType(CType(0, Byte), Integer), CType(CType(0, Byte), Integer), CType(CType(64, Byte), Integer))
+        Me.logTB.Location = New System.Drawing.Point(12, 207)
+        Me.logTB.Multiline = True
+        Me.logTB.Name = "logTB"
+        Me.logTB.ScrollBars = System.Windows.Forms.ScrollBars.Vertical
+        Me.logTB.Size = New System.Drawing.Size(178, 196)
+        Me.logTB.TabIndex = 9
         '
         'QueryContainer2
         '
@@ -124,25 +137,13 @@ Partial Class MainUI
         Me.QueryContainer1.Size = New System.Drawing.Size(551, 219)
         Me.QueryContainer1.TabIndex = 1
         '
-        'TextBox3
-        '
-        Me.TextBox3.Font = New System.Drawing.Font("Segoe UI", 8.25!, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, CType(0, Byte))
-        Me.TextBox3.ForeColor = System.Drawing.Color.FromArgb(CType(CType(0, Byte), Integer), CType(CType(0, Byte), Integer), CType(CType(64, Byte), Integer))
-        Me.TextBox3.Location = New System.Drawing.Point(12, 211)
-        Me.TextBox3.Multiline = True
-        Me.TextBox3.Name = "TextBox3"
-        Me.TextBox3.ScrollBars = System.Windows.Forms.ScrollBars.Vertical
-        Me.TextBox3.Size = New System.Drawing.Size(178, 175)
-        Me.TextBox3.TabIndex = 9
-        Me.TextBox3.Text = "Waiting for query.."
-        '
         'MainUI
         '
         Me.AutoScaleDimensions = New System.Drawing.SizeF(6.0!, 13.0!)
         Me.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font
         Me.BackColor = System.Drawing.Color.White
         Me.ClientSize = New System.Drawing.Size(759, 441)
-        Me.Controls.Add(Me.TextBox3)
+        Me.Controls.Add(Me.logTB)
         Me.Controls.Add(Me.Label3)
         Me.Controls.Add(Me.TextBox2)
         Me.Controls.Add(Me.Label2)
@@ -171,5 +172,5 @@ Partial Class MainUI
     Friend WithEvents Label2 As Label
     Friend WithEvents TextBox2 As TextBox
     Friend WithEvents Label3 As Label
-    Friend WithEvents TextBox3 As TextBox
+    Friend WithEvents logTB As TextBox
 End Class
