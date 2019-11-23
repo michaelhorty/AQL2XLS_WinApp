@@ -9,6 +9,16 @@
         guiActive = True
         Call multiControls()
         addLOG("GUI Activated")
+
+        Dim newClient As New ARMclient("https://" + TextBox1.Text + ".armis.com", TextBox2.Text)
+
+        If newClient.gotToken = False Then
+            addLOG("Error getting token:" + newClient.lastError)
+        Else
+            addLOG("Token: " + newClient.tokeN)
+            addLOG("Expires: UTC " + newClient.tokenExpires.ToString("hh:mm:ss"))
+        End If
+
     End Sub
 
     Private Sub multiControls()
