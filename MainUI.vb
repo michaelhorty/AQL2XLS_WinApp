@@ -2,7 +2,7 @@
     Public loggingEnabled As Boolean
     Public guiActive As Boolean
     Delegate Sub StringArgReturningVoidDelegate([text] As String)
-
+    Public authInfo As apiAuthInfo
     Private Sub MainUI_Load(sender As Object, e As EventArgs) Handles MyBase.Load
         ' main entry point
         Loggingenabled = True
@@ -10,13 +10,19 @@
         Call multiControls()
         addLOG("GUI Activated")
 
-        Dim newClient As New ARMclient("https://" + TextBox1.Text + ".armis.com", TextBox2.Text)
+        authInfo = New apiAuthInfo
+        With authInfo
+            .fqdN = "https://" + TextBox1.Text + ".armis.com"
+            .secretKey = TextBox2.Text
+        End With
+
+        Dim newClient As New ARMclient(authInfo)
 
         If newClient.gotToken = False Then
             addLOG("Error getting token:" + newClient.lastError)
         Else
-            addLOG("Token: " + newClient.tokeN)
-            addLOG("Expires: UTC " + newClient.tokenExpires.ToString("hh:mm:ss"))
+            addLOG("Token: " + authInfo.tokeN)
+            addLOG("Expires: UTC " + authInfo.tokenExpires.ToString("hh:mm:ss"))
         End If
 
     End Sub
@@ -97,4 +103,30 @@ errorcatch:
         Call multiControls()
 
     End Sub
+
+    Private Sub QueryContainer1_searchQuery() Handles QueryContainer1.searchQuery, QueryContainer2.searchQuery
+        'ently, the following types of searches are supported:
+        '1. in:Devices
+        '2. in:alerts
+        '3. In:activity
+        Dim qrY$
+
+        qrY = QueryContainer1.TextBox1.Text
+
+        Call submitQuery(qrY)
+
+    End Sub
+
+    Private Sub submitQuery(qry)
+        If authInfo.tokeN = "" Then
+            MsgBox("Not authenticated.. Check your Secret Key!", vbOKOnly, "Not Connected")
+            Exit Sub
+        End If
+
+        Dim AClient As New ARMclient(authInfo)
+        AClient.searchAPI(qry)
+
+
+    End Sub
+
 End Class
