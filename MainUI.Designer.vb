@@ -22,6 +22,7 @@ Partial Class MainUI
     'Do not modify it using the code editor.
     <System.Diagnostics.DebuggerStepThrough()> _
     Private Sub InitializeComponent()
+        Me.components = New System.ComponentModel.Container()
         Dim resources As System.ComponentModel.ComponentResourceManager = New System.ComponentModel.ComponentResourceManager(GetType(MainUI))
         Me.PictureBox1 = New System.Windows.Forms.PictureBox()
         Me.CheckBox1 = New System.Windows.Forms.CheckBox()
@@ -33,6 +34,7 @@ Partial Class MainUI
         Me.logTB = New System.Windows.Forms.TextBox()
         Me.QueryContainer2 = New AQL2XLS_WinApp.QueryContainer()
         Me.QueryContainer1 = New AQL2XLS_WinApp.QueryContainer()
+        Me.Timer1 = New System.Windows.Forms.Timer(Me.components)
         CType(Me.PictureBox1, System.ComponentModel.ISupportInitialize).BeginInit()
         Me.SuspendLayout()
         '
@@ -137,6 +139,10 @@ Partial Class MainUI
         Me.QueryContainer1.Size = New System.Drawing.Size(551, 219)
         Me.QueryContainer1.TabIndex = 1
         '
+        'Timer1
+        '
+        Me.Timer1.Enabled = True
+        '
         'MainUI
         '
         Me.AutoScaleDimensions = New System.Drawing.SizeF(6.0!, 13.0!)
@@ -173,4 +179,5 @@ Partial Class MainUI
     Friend WithEvents TextBox2 As TextBox
     Friend WithEvents Label3 As Label
     Friend WithEvents logTB As TextBox
+    Friend WithEvents Timer1 As Timer
 End Class

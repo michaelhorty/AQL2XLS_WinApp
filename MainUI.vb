@@ -187,9 +187,11 @@ errorcatch:
             mThreading.nextNum = nextResultStart
             'addLOG(qry + "," + nextResultStart.ToString)
             ThreadPool.QueueUserWorkItem(w, mThreading)
-            Thread.Sleep(200)
+            QueryContainer1.Label1.Text = "Objects:" + deviceS1.Count.ToString
+            Thread.Sleep(100)
             Application.DoEvents()
-            Thread.Sleep(200)
+            QueryContainer1.Label1.Text = "Objects:" + deviceS1.Count.ToString
+            Thread.Sleep(100)
             Application.DoEvents()
             nextResultStart += numResultsPerCall
         Loop
@@ -201,6 +203,7 @@ errorcatch:
 
         Do Until deviceS1.Count >= tlNum 'this counter will decrease based on AClient_searchWueryReceived event
             Application.DoEvents()
+            QueryContainer1.Label1.Text = "Objects:" + deviceS1.Count.ToString
             Thread.Sleep(100)
             Application.DoEvents()
             progressSoFar += 100
