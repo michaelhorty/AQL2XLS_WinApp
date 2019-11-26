@@ -1,7 +1,45 @@
 ﻿Imports RestSharp
 Imports Newtonsoft.Json
 
+Public Class threadingArgs
+    Public authInfo As apiAuthInfo
+    Public nextNum As Long
+    Public numRecs As Long
+    Public qrY$
+    Public Sub New(A As apiAuthInfo)
+        authInfo = A
+        nextNum = 0
+        numRecs = 100
+    End Sub
 
+End Class
+Public Class deviceResponseData
+    Public count As Long
+    'Public Next As Long 'next is lang keyword cannot set json
+    Public prev As Long
+    Public nextResults As Long
+    Public total As Long
+
+End Class
+
+Public Class deviceData
+    Public category$
+    Public firstSeen$
+    Public id As Long
+    Public ipAddress$
+    Public lastSeen$
+    Public macAddress$
+    Public manufacturer$
+    Public model$
+    Public name$
+    Public operatingSystem$
+    Public operatingSystemVersion$
+    Public riskLevel As Long
+    Public tags$() ' As deviceTags
+    Public type$
+    Public user$
+
+End Class
 Public Class tokenData
     Public access_token As String
     Public expiration_utc As String
@@ -25,6 +63,8 @@ Public Class ARMclient
     Public gotToken As Boolean
     Public tokenExpires As DateTime
     Private theKey$
+
+    Public Event searchQueryReturned(jsoN$, firstNum As Long)
     Public Sub New(ByRef authInfo As apiAuthInfo)
         'when setting up new client
         'can use token from previous clients
@@ -46,17 +86,9 @@ Public Class ARMclient
 
         gotToken = False
 
-        If CBool(GetToken(theKey)) = True Then
-            gotToken = True
-            authInfo.tokeN = tokeN
-            authInfo.tokenExpires = tokenExpires
-        End If
+        Call GetToken(authInfo)
     End Sub
 
-    Private Sub newToken(setNewToken$)
-        gotToken = True
-        tokeN = tokeN
-    End Sub
 
     Private Sub setError(ByVal theError$)
         MainUI.addLOG("ERROR: " + theError)
@@ -64,8 +96,17 @@ Public Class ARMclient
     End Sub
 
 
-    Private Function GetToken(ByVal secretKey) As String
+    Private Function GetToken(ByRef authInfo As apiAuthInfo) As String
         'On Error GoTo errorcatch
+        Dim secretKey$ = authInfo.secretKey
+
+        Dim a$ = "Response empty"
+        GetToken = a
+
+        If Len(secretKey) = 0 Then
+            Exit Function
+        End If
+
         Dim client = New RestClient(fqdN + "/api/v1/access_token/")
         Dim request = New RestRequest(Method.POST)
         request.AddHeader("Cache-Control", "no-cache")
@@ -78,7 +119,6 @@ Public Class ARMclient
         Dim response As IRestResponse
         response = client.Execute(request)
 
-        Dim a$ = "Response empty"
         If IsNothing(response.Content) = False Then a$ = response.Content
         If a = "" Then a = response.ErrorMessage
 
@@ -91,7 +131,7 @@ Public Class ARMclient
 
         If response.IsSuccessful = False Then
             Call setError("Did Not get token response - " + msgResp)
-            Return a
+            Return "False"
             Exit Function
         End If
 
@@ -100,14 +140,55 @@ Public Class ARMclient
         tokeN = tokData.data.access_token
         tokenExpires = CDate(tokData.data.expiration_utc)
 
+        authInfo.tokeN = tokeN
+        authInfo.tokenExpires = tokenExpires
+
         Return "True"
         Exit Function
-errorcatch:
-        Call setError("Token error - could Not make request:   " + a) ' " + response.ErrorMessage.ToString + " " + response.Content)
 
-        Return ""
     End Function
 
+    Public Function deserializeDeviceResponse(ByRef json$) As List(Of deviceData)
+        deserializeDeviceResponse = New List(Of deviceData)
+
+        Dim jList$ = ""
+        jList = Mid(json, InStr(json, "[") - 1)
+
+        Dim K As Long
+        Dim a$ = ""
+
+        K = Len(jList)
+        a = Mid(jList, K, 1)
+
+        Do Until a = "]"
+            K = K - 1
+            jList = Mid(jList, 1, K)
+            a = Mid(jList, K, 1)
+        Loop
+
+        deserializeDeviceResponse = JsonConvert.DeserializeObject(Of List(Of deviceData))(jList)
+    End Function
+
+    Public Function deserializeResponseData(ByRef json$) As deviceResponseData
+        deserializeResponseData = New deviceResponseData
+
+        If Len(json) = 0 Then Exit Function
+
+
+        Dim jsonObject As Newtonsoft.Json.Linq.JObject = Newtonsoft.Json.Linq.JObject.Parse(json)
+        '        Dim jsonArray As JArray = jsonObject("result")
+
+        With deserializeResponseData
+            .total = jsonObject("data").Item("total")
+            .count = jsonObject("data").Item("count")
+            .prev = jsonObject("data").Item("prev")
+            .nextResults = jsonObject("data").Item("next")
+        End With
+
+        Dim a$
+        a$ = ""
+
+    End Function
     Public Function getJSONObject(key$, json$) As String
         On Error GoTo errorcatch
 
@@ -118,8 +199,18 @@ errorcatch:
         Return ""
     End Function
 
-    Public Function searchAPI(ByVal qrY$, Optional ByVal beginNum As Long = 0, Optional ByVal endNum As Long = 100) As String
-        Dim client = New RestClient(fqdN + "/api/v1/search/?aql=" + qrY)
+    Public Function searchAPI(tInfo As threadingArgs) As String
+        'test for expired token & get new if necessary
+        If DateDiff(DateInterval.Minute, Now.ToUniversalTime, tokenExpires) < 5 Then
+            'within 5 minutes of being expired, get new token
+            Call GetToken(tInfo.authInfo)
+        End If
+
+        searchAPI = ""
+
+        Dim qryString$ = fqdN + "/api/v1/search/?aql=" + tInfo.qrY + "&from=" + tInfo.nextNum.ToString + "&length=" + tInfo.numRecs.ToString
+
+        Dim client = New RestClient(qryString)
 
         Dim request = New RestRequest(Method.GET)
         request.AddHeader("Cache-Control", "no-cache")
@@ -127,61 +218,30 @@ errorcatch:
 
         Dim response As IRestResponse
         response = client.Execute(request)
-        ' age"": ""Invalid access token.""," & vbLf & "  ""success
+
         Dim a$ = "Response empty"
+
+
         If IsNothing(response.Content) = False Then a$ = response.Content
         If a = "" Then a = response.ErrorMessage
 
         Dim msgResp$
         msgResp = getJSONObject("message", a)
         Dim succesS As Boolean
+
         succesS = CBool(getJSONObject("success", a))
 
-        tokeN$ = ""
-
-        If response.IsSuccessful = False Then
-            Call setError("Did Not get token response - " + msgResp)
-            Return a
-            Exit Function
+        If response.IsSuccessful = False Or succesS = False Then
+            Call setError("Error to " + qryString + " - " + msgResp)
         End If
 
-    End Function
-
-End Class
-
-Public Class ArWrapper
-
-    Public apiURI$
-    Public apiResponse$
-    Public rsExecuted As Boolean
-    Private rsRequest As RestSharp.RestRequest
-    Private getORpost$
-    Private restToken$
-
-    Public Function exeAPI() As IRestResponse
-        rsExecuted = False
-        Dim rsClient As RestClient
-
-        rsClient = New RestClient(Me.apiURI)
-
-        Me.rsExecuted = True
-        exeAPI = rsClient.Execute(rsRequest)
-
-        Me.apiResponse = exeAPI.Content
-        MainUI.addLOG("-------ARM REQUEST--------")
-        MainUI.addLOG(Me.getORpost + ": " + Me.apiURI)
-        Dim c$ = ""
-
-        For Each P In rsRequest.Parameters
-            c = P.Value.ToString
-            If Mid(c, 1, 6) = "Authorization" Then c = "Authorization {token}"
-            MainUI.addLOG(P.Name.ToString + " " + c)
-        Next
-        MainUI.addLOG("--------------------------")
-
-        If Len(Me.apiResponse) = 0 Then
-            Me.apiResponse = exeAPI.ErrorMessage
+        If succesS = True Then ' if api response shows true
+            'MainUI.addLOG("Search query returned - " + qryString)
         End If
+
+        searchAPI = a
+
+        RaiseEvent searchQueryReturned(a, tInfo.nextNum)
 
     End Function
 

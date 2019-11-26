@@ -41,6 +41,7 @@ Partial Class QueryContainer
         Me.TextBox1.Name = "TextBox1"
         Me.TextBox1.Size = New System.Drawing.Size(545, 63)
         Me.TextBox1.TabIndex = 0
+        Me.TextBox1.Text = "in:devices"
         '
         'Label1
         '
