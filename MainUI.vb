@@ -10,6 +10,10 @@ Public Class MainUI
     Private jsoN2$
     Private deviceS1 As List(Of deviceData)
 
+    Private objType1 As queryType
+    Private objType2 As queryType
+
+
     Private WithEvents AClient As ARMclient
 
     Private processTasks1 As Long 'next query to be written to deviceS1
@@ -48,34 +52,7 @@ Public Class MainUI
 
 
         Exit Sub
-        If CheckBox1.Checked = True Then
-            QueryContainer1.btnGo.Visible = True
-            QueryContainer2.btnGo.Visible = True
-            QueryContainer2.TextBox1.Visible = True
-            QueryContainer2.Visible = True
-            QueryContainer2.Label1.Visible = True
-            QueryContainer2.btnXls.Visible = True
-            QueryContainer2.btnCsv.Visible = True
-            QueryContainer2.btnJson.Visible = True
-            QueryContainer1.btnXls.Visible = True
-            QueryContainer1.btnCsv.Visible = True
-            QueryContainer1.btnJson.Visible = True
 
-        Else
-            QueryContainer2.btnGo.Visible = True
-            QueryContainer1.btnGo.Visible = False
-            QueryContainer2.TextBox1.Visible = False
-            QueryContainer2.Label1.Visible = False
-            QueryContainer2.Visible = True
-            QueryContainer2.btnXls.Visible = True
-            QueryContainer2.btnCsv.Visible = True
-            QueryContainer2.btnJson.Visible = True
-            QueryContainer1.btnXls.Visible = False
-            QueryContainer1.btnCsv.Visible = False
-            QueryContainer1.btnJson.Visible = False
-
-
-        End If
     End Sub
     Public Sub addLOG(ByVal a$, Optional ByVal suppressDT As Boolean = False, Optional ByVal forceLog As Boolean = False)
         On Error GoTo errorcatch
@@ -133,7 +110,7 @@ errorcatch:
 
         qrY = QueryContainer1.TextBox1.Text
 
-        QueryContainer1.btnGo.Visible = False
+        'QueryContainer1.btnGo.Visible = False
 
         Call submitQuery(qrY, 1)
 
@@ -147,6 +124,25 @@ errorcatch:
         End If
 
         AClient = New ARMclient(authInfo)
+
+        objType1 = queryType.Undefined
+        objType2 = queryType.Undefined
+
+        If LCase(Mid(qry, 1, 10)) = "in:devices" Then objType1 = queryType.Devices
+        If LCase(Mid(qry, 1, 13)) = "in:activities" Then objType1 = queryType.Activities
+        If LCase(Mid(qry, 1, 9)) = "in:alerts" Then objType1 = queryType.Alerts
+
+        If objType1 = queryType.Undefined Then
+            MsgBox("SEARCH queries support Devices, Activities and Alerts. Please enter a valid query.", vbOKOnly, "Invalid Query")
+        End If
+
+        If queryBox1or2 = 1 Then
+            Call enableButtons(1, True)
+            QueryContainer1.btnGo.Visible = False
+        Else
+            Call enableButtons(2, True)
+            QueryContainer2.btnGo.Visible = False
+        End If
 
 
         Dim jsonText$ = ""
@@ -225,18 +221,31 @@ allDone:
         addLOG(deviceS1.Count.ToString + " devices in " + Math.Round((progressSoFar + numMS) / 1000, 2).ToString("#.##") + " seconds")
 
         If queryBox1or2 = 1 Then
-            QueryContainer1.btnXls.Visible = True
-            QueryContainer1.btnCsv.Visible = True
-            QueryContainer1.btnJson.Visible = True
+            Call enableButtons(1)
             QueryContainer1.btnGo.Visible = True
         Else
-            QueryContainer2.btnXls.Visible = True
-            QueryContainer2.btnCsv.Visible = True
-            QueryContainer2.btnJson.Visible = True
+            Call enableButtons(2)
             QueryContainer2.btnGo.Visible = True
-
         End If
 
+    End Sub
+
+    Private Sub enableButtons(qry1or2 As Integer, Optional disableInstead As Boolean = False)
+        Dim enablE As Boolean = True
+        If disableInstead = True Then enablE = False
+
+        If qry1or2 = 1 Then
+            QueryContainer1.btnXls.Visible = enablE
+            QueryContainer1.btnCsv.Visible = enablE
+            QueryContainer1.btnJson.Visible = enablE
+            '            QueryContainer1.btnGo.Visible = True
+        Else
+            QueryContainer2.btnXls.Visible = enablE
+            QueryContainer2.btnCsv.Visible = enablE
+            QueryContainer2.btnJson.Visible = enablE
+            '           QueryContainer2.btnGo.Visible = True
+
+        End If
     End Sub
 
     Private Sub addDevices(json$, ByRef allDevices As List(Of deviceData))

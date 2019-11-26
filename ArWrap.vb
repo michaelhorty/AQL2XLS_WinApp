@@ -1,6 +1,14 @@
 ﻿Imports RestSharp
 Imports Newtonsoft.Json
 
+Enum queryType ' As PropertyCollection
+    Devices
+    Activities
+    Alerts
+    Undefined
+End Enum
+
+
 Public Class threadingArgs
     Public authInfo As apiAuthInfo
     Public nextNum As Long
