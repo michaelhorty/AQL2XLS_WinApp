@@ -14,6 +14,8 @@ Module modXLS
             Exit Sub
         End If
 
+        'MainUI.addLOG("Opening Excel")
+
         Dim appXL As New Excel.Application
         Dim xlWB As Excel.Workbook
         Dim xlWS As Excel.Worksheet
@@ -34,8 +36,9 @@ Module modXLS
         Next
 
         Dim startRow$ = "A2"
+        'MainUI.addLOG("Copying 3D to Excel")
 
-        xlWS.Range(startRow + ":" + xlsColName(F.Count) + Trim(Str(numRows))).Value = myXLS3d
+        xlWS.Range(startRow + ":" + xlsColName(F.Count) + Trim(Str(numRows + 1))).Value = myXLS3d
 
         xlWB.RefreshAll()
         xlWS.Columns.AutoFit()
@@ -84,6 +87,7 @@ Module modXLS
         xlWB = Nothing
         appXL = Nothing
         myXLS3d = Nothing
+        GC.Collect()
 
     End Sub
     Private Function csvObj(ByRef a$) As String

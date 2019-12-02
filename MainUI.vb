@@ -1,4 +1,5 @@
-﻿Imports System.Threading
+﻿Imports System.ComponentModel
+Imports System.Threading
 
 Public Class MainUI
     Private loggingEnabled As Boolean
@@ -35,8 +36,8 @@ Public Class MainUI
         If Len(authInfo.tokeN) = 0 Then
             addLOG("Error getting token:" + newClient.lastError)
         Else
-            addLOG("Token: " + authInfo.tokeN)
-            addLOG("Expires: UTC " + authInfo.tokenExpires.ToString("hh:mm:ss"))
+            'addLOG("Got token")
+            addLOG("Token expires: UTC " + authInfo.tokenExpires.ToString("hh:mm:ss"))
         End If
 
         newClient = Nothing
@@ -365,7 +366,7 @@ allDone:
 
     Private Sub QueryContainer1_exportJSON() Handles QueryContainer1.exportJSON
         Call saveToClipboard(jsoN1)
-        MsgBox("JSON saved: " + Len(jsoN1).ToString + " chars")
+        MsgBox("This feature is not fully implemented - currently you get only the most recent JSON response from the server (100 items per file)" + vbCrLf + "JSON saved to clipboard: " + Len(jsoN1).ToString + " chars", vbOKOnly, "JSON Export")
     End Sub
 
     Private Sub AClient_searchQueryReturned(jsoN As String, firstNum As Long, qryType As String) Handles AClient.searchQueryReturned
@@ -446,8 +447,9 @@ allDone:
 
                 'coL += 1
                 'Next
-                ReDim myXLS3d(deviceS1.Count - 1, 12)
+                ReDim myXLS3d(deviceS1.Count, 12)
 
+                addLOG("Creating Big 3D")
                 rArgs.someColl = New Collection
                 With rArgs.someColl
                     .Add("Category")
@@ -486,7 +488,8 @@ allDone:
                     End With
                 Next
 
-                rArgs.booL1 = True
+
+                addLOG("Exporting-")
 
                 Call dump2XLS(myXLS3d, roW, rArgs)
         End Select
@@ -500,6 +503,30 @@ allDone:
     Private Sub QueryContainer1_exportXLS() Handles QueryContainer1.exportXLS
         Dim rArgs As New reportingArgs
         rArgs.rptName = "Devices"
+        rArgs.booL1 = True
+
+        xlsEngine.RunWorkerAsync(rArgs)
+
+    End Sub
+
+    Private Sub xlsEngine_RunWorkerCompleted(sender As Object, e As RunWorkerCompletedEventArgs) Handles xlsEngine.RunWorkerCompleted
+        addLOG("Export completed")
+        GC.Collect()
+
+    End Sub
+
+    Private Sub QueryContainer1_exportCSV() Handles QueryContainer1.exportCSV
+        Dim rArgs As New reportingArgs
+        rArgs.rptName = "Devices"
+        rArgs.booL1 = False
+
+        Dim O As New SaveFileDialog
+        O.Filter = "CSV Files (*.csv)|*.csv|Text Files (*.txt)|*.txt|All files (*.*)|*.*"
+        O.CheckPathExists = True
+        O.Title = "Save"
+        O.ShowDialog()
+
+        rArgs.s1 = O.FileName
 
         xlsEngine.RunWorkerAsync(rArgs)
 
