@@ -1,12 +1,6 @@
 ﻿Imports RestSharp
 Imports Newtonsoft.Json
 
-Enum queryType ' As PropertyCollection
-    Devices
-    Activities
-    Alerts
-    Undefined
-End Enum
 
 
 Public Class threadingArgs
@@ -14,6 +8,18 @@ Public Class threadingArgs
     Public nextNum As Long
     Public numRecs As Long
     Public qrY$
+
+    Public ReadOnly Property qType As String
+        Get
+            Dim objType1$ = "Undefined"
+            If LCase(Mid(qrY, 1, 10)) = "in:devices" Then objType1 = "Devices"
+            If LCase(Mid(qrY, 1, 13)) = "in:activity" Then objType1 = "Activity"
+            If LCase(Mid(qrY, 1, 9)) = "in:alerts" Then objType1 = "Alerts"
+            Return objType1
+        End Get
+
+    End Property
+
     Public Sub New(A As apiAuthInfo)
         authInfo = A
         nextNum = 0
@@ -48,6 +54,27 @@ Public Class deviceData
     Public user$
 
 End Class
+
+Public Class alertData
+
+End Class
+
+Public Class sensorData
+    Public name$
+End Class
+Public Class activityData
+    Public activityId$
+    Public activityUUID$
+    Public connectionIds$()
+    Public content$
+    Public deviceIds() As Long
+    Public protocol$
+    Public sensor As sensorData
+    Public time$
+    Public title$
+    Public type$
+
+End Class
 Public Class tokenData
     Public access_token As String
     Public expiration_utc As String
@@ -72,7 +99,7 @@ Public Class ARMclient
     Public tokenExpires As DateTime
     Private theKey$
 
-    Public Event searchQueryReturned(jsoN$, firstNum As Long)
+    Public Event searchQueryReturned(jsoN$, firstNum As Long, qryType As String)
     Public Sub New(ByRef authInfo As apiAuthInfo)
         'when setting up new client
         'can use token from previous clients
@@ -177,6 +204,49 @@ Public Class ARMclient
         deserializeDeviceResponse = JsonConvert.DeserializeObject(Of List(Of deviceData))(jList)
     End Function
 
+    Public Function deserializeAlertResponse(ByRef json$) As List(Of AlertData)
+        deserializeAlertResponse = New List(Of AlertData)
+
+        Dim jList$ = ""
+        jList = Mid(json, InStr(json, "[") - 1)
+
+        Dim K As Long
+        Dim a$ = ""
+
+        K = Len(jList)
+        a = Mid(jList, K, 1)
+
+        Do Until a = "]"
+            K = K - 1
+            jList = Mid(jList, 1, K)
+            a = Mid(jList, K, 1)
+        Loop
+
+        deserializeAlertResponse = JsonConvert.DeserializeObject(Of List(Of AlertData))(jList)
+    End Function
+
+    Public Function deserializeActivityResponse(ByRef json$) As List(Of ActivityData)
+        deserializeActivityResponse = New List(Of ActivityData)
+
+        Dim jList$ = ""
+        jList = Mid(json, InStr(json, "[") - 1)
+
+        Dim K As Long
+        Dim a$ = ""
+
+        K = Len(jList)
+        a = Mid(jList, K, 1)
+
+        Do Until a = "]"
+            K = K - 1
+            jList = Mid(jList, 1, K)
+            a = Mid(jList, K, 1)
+        Loop
+
+        deserializeActivityResponse = JsonConvert.DeserializeObject(Of List(Of ActivityData))(jList)
+    End Function
+
+
     Public Function deserializeResponseData(ByRef json$) As deviceResponseData
         deserializeResponseData = New deviceResponseData
 
@@ -249,7 +319,7 @@ errorcatch:
 
         searchAPI = a
 
-        RaiseEvent searchQueryReturned(a, tInfo.nextNum)
+        RaiseEvent searchQueryReturned(a, tInfo.nextNum, tInfo.qType)
 
     End Function
 

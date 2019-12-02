@@ -32,9 +32,10 @@ Partial Class MainUI
         Me.TextBox2 = New System.Windows.Forms.TextBox()
         Me.Label3 = New System.Windows.Forms.Label()
         Me.logTB = New System.Windows.Forms.TextBox()
+        Me.Timer1 = New System.Windows.Forms.Timer(Me.components)
         Me.QueryContainer2 = New AQL2XLS_WinApp.QueryContainer()
         Me.QueryContainer1 = New AQL2XLS_WinApp.QueryContainer()
-        Me.Timer1 = New System.Windows.Forms.Timer(Me.components)
+        Me.xlsEngine = New System.ComponentModel.BackgroundWorker()
         CType(Me.PictureBox1, System.ComponentModel.ISupportInitialize).BeginInit()
         Me.SuspendLayout()
         '
@@ -99,7 +100,7 @@ Partial Class MainUI
         Me.TextBox2.Name = "TextBox2"
         Me.TextBox2.Size = New System.Drawing.Size(178, 22)
         Me.TextBox2.TabIndex = 7
-        Me.TextBox2.Text = "2b8348c7314ba00ea3e003a15c3109c0a608d263a456ee5e715f6c3feca2c2e2"
+        Me.TextBox2.Text = "093aa619e5e94d29a81897f051dc10028e7cdeb0fbad30e20e1bc7e072ba1fea"
         '
         'Label3
         '
@@ -123,6 +124,10 @@ Partial Class MainUI
         Me.logTB.Size = New System.Drawing.Size(178, 196)
         Me.logTB.TabIndex = 9
         '
+        'Timer1
+        '
+        Me.Timer1.Enabled = True
+        '
         'QueryContainer2
         '
         Me.QueryContainer2.BackColor = System.Drawing.Color.White
@@ -139,9 +144,8 @@ Partial Class MainUI
         Me.QueryContainer1.Size = New System.Drawing.Size(551, 219)
         Me.QueryContainer1.TabIndex = 1
         '
-        'Timer1
+        'xlsEngine
         '
-        Me.Timer1.Enabled = True
         '
         'MainUI
         '
@@ -180,4 +184,5 @@ Partial Class MainUI
     Friend WithEvents Label3 As Label
     Friend WithEvents logTB As TextBox
     Friend WithEvents Timer1 As Timer
+    Friend WithEvents xlsEngine As System.ComponentModel.BackgroundWorker
 End Class
