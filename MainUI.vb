@@ -1,6 +1,8 @@
 ﻿Imports System.ComponentModel
 Imports System.Threading
 
+
+
 Public Class MainUI
     Private loggingEnabled As Boolean
     Private guiActive As Boolean
@@ -18,6 +20,8 @@ Public Class MainUI
 
     Private WithEvents AClient As ARMclient
 
+    Private deviceCompleted As Collection
+    Private deviceString As Collection
     Private Sub MainUI_Load(sender As Object, e As EventArgs) Handles MyBase.Load
         ' main entry point
         loggingEnabled = True
@@ -112,7 +116,14 @@ errorcatch:
         Call submitQuery(qrY, 1)
 
     End Sub
-
+    Private Function getTArgs(qrY$, nNum As Long, nRecs As Integer) As threadingArgs
+        getTArgs = New threadingArgs(authInfo)
+        With getTArgs
+            .nextNum = nNum
+            .numRecs = nRecs
+            .qrY = qrY
+        End With
+    End Function
 
     Private Sub submitQuery(qry$, Optional ByVal queryBox1or2 As Integer = 1)
         If authInfo.tokeN = "" Then
@@ -121,13 +132,7 @@ errorcatch:
         End If
 
         AClient = New ARMclient(authInfo)
-        Dim mThreading As threadingArgs
-        mThreading = New threadingArgs(authInfo)
-        mThreading.qrY = qry
 
-        If mThreading.qType = "Undefined" Then
-            MsgBox("SEARCH queries support Devices, Activities and Alerts. Please enter a valid query.", vbOKOnly, "Invalid Query")
-        End If
 
         If queryBox1or2 = 1 Then
             Call enableButtons(1, True)
@@ -146,25 +151,41 @@ errorcatch:
 
 
         device1Nums = New Collection
+        deviceString = New Collection
+        deviceCompleted = New Collection
         device1Nums.Add(0)
 
-        jsonText = AClient.searchAPI(mThreading)
+        Dim mThreading As threadingArgs
+        mThreading = getTArgs(qry, 0, numResultsPerCall)
+
+        If mThreading.qType = "Undefined" Then
+            MsgBox("SEARCH queries support Devices, Activities and Alerts. Please enter a valid query.", vbOKOnly, "Invalid Query")
+        End If
+
+        ' changing class globals didnt help
+        '        AClient.currQry = qry
+        '        AClient.currQueryType = mThreading.qType
+        '        AClient.currBeginNDX = 0
+
+        AClient.lastResult = ""
+
+
+        Call AClient.searchAPI(mThreading)
+
+        Do Until deviceCompleted.Count = 1
+            Thread.Sleep(50)
+        Loop
 
         If queryBox1or2 = 1 Then jsoN1 = jsonText Else jsoN2 = jsonText
 
         Dim respData As New deviceResponseData
-        respData = AClient.deserializeResponseData(jsoN1)
+        respData = AClient.deserializeResponseData(AClient.lastResult)
 
         tlNum = respData.total
 
         If tlNum <= 100 Then GoTo allDone
 
         Dim w As WaitCallback = New WaitCallback(AddressOf AClient.searchAPI)
-
-
-        'depending on reliability
-        'may need to identify requests that werent answered
-        'if queuing changed from 200 to 100ms, UI seems to not return responses
 
         nextResultStart = respData.count
 
@@ -174,30 +195,31 @@ errorcatch:
             nextResultStart += numResultsPerCall
         Loop
 
-        addLOG("Queuing " + device1Nums.Count.ToString + " API threads for " + tlNum.ToString + " " + mThreading.qType)
-
-        nextResultStart = respData.count
-
-
-        lockingObj = False
-
-        ThreadPool.SetMaxThreads(25, 25)
-
+        addLOG("Queuing " + device1Nums.Count.ToString + " API hits for " + tlNum.ToString + " " + mThreading.qType)
         Dim numMS As Long = 0
         Dim startReq As DateTime = Now
 
+        Dim numQ As Integer = 0
+
+        lockingObj = False
+
+        nextResultStart = numResultsPerCall
+
+        ThreadPool.SetMaxThreads(20, 20)
+
         Do Until nextResultStart >= tlNum
-            mThreading.nextNum = nextResultStart
-            'addLOG(qry + "," + nextResultStart.ToString)
+
+            mThreading = getTArgs(qry, nextResultStart, numResultsPerCall)
             ThreadPool.QueueUserWorkItem(w, mThreading)
-            QueryContainer1.Label1.Text = "Objects:" + getObjCount(mThreading).ToString
+            numQ += 1
+            QueryContainer1.Label1.Text = "Objects:" + (deviceCompleted.Count * 100).ToString
             Application.DoEvents()
             Thread.Sleep(150)
             Application.DoEvents()
-            'QueryContainer1.Label1.Text = "Objects:" + getObjCount(mThreading).ToString
-            'Thread.Sleep(50)
-            'Application.DoEvents()
-            If nextResultStart Mod 10000 = 0 Then addLOG(Math.Round(nextResultStart / 100).ToString + " threads queued")
+            ' Do While numQ - deviceCompleted.Count > 20
+            '     Thread.Sleep(50)
+            '     Application.DoEvents()
+            ' Loop
             nextResultStart += numResultsPerCall
         Loop
 
@@ -208,34 +230,39 @@ errorcatch:
 
         Dim numRetries As Integer = 0
 
-        Do Until device1Nums.Count = 0 'this counter will decrease based on AClient_searchWueryReceived event
+        Do Until deviceCompleted.Count = device1Nums.Count 'this counter will decrease based on AClient_searchWueryReceived event
             Application.DoEvents()
-            QueryContainer1.Label1.Text = "Objects:" + getObjCount(mThreading).ToString
+            QueryContainer1.Label1.Text = "Objects:" + (deviceCompleted.Count * 100).ToString
             Thread.Sleep(100)
             Application.DoEvents()
             progressSoFar += 100
-
-            'need to only request tose which are missing
-            'build collection
-            If numMS + progressSoFar > 3000 And progressSoFar Mod 500 = 0 Then
-                '    '1 second intervals
-                '   For Each D In device1Nums
-                'addLOG("Re-requesting " + device1Nums(1).ToString + "-" + (CInt(device1Nums(1)) + numResultsPerCall).ToString)
-                numRetries += 1
-                mThreading.nextNum = device1Nums(1)
-                jsonText = AClient.searchAPI(mThreading)
-                Thread.Sleep(50)
-                Application.DoEvents()
-                '    Next
-                '    'this action kicks another request off if not received in a second
-            End If
         Loop
 
-        QueryContainer1.Label1.Text = "[Objects]:" + getObjCount(mThreading).ToString
 
 allDone:
 
-        addLOG(getObjCount(mThreading).ToString + " objects in " + Math.Round((progressSoFar + numMS) / 1000, 2).ToString("#.##") + " secs (" + numRetries.ToString + " retries)")
+
+        deviceS1 = New List(Of deviceData)
+
+        ' addLOG(deviceS1.Count.ToString + " objects being deserialized")
+
+
+        Dim K As Integer = 0
+        Dim wON As Integer = 0
+
+        For Each JS In deviceString
+            wON = grpNDX(deviceCompleted, K.ToString)
+            If wON = 0 Then
+                addLOG("Cannot find items starting at " + (K.ToString * 100).ToString)
+            Else
+                Call addDevices(JS, deviceS1, deviceCompleted(wON))
+            End If
+            K += 1
+        Next
+
+        QueryContainer1.Label1.Text = "[Objects]:" + deviceS1.Count.ToString
+
+        addLOG(deviceS1.Count.ToString + " objects in " + Math.Round((progressSoFar + numMS) / 1000, 2).ToString("#.##") + " sec") 's (" + numRetries.ToString + " retries)")
 
         If queryBox1or2 = 1 Then
             Call enableButtons(1)
@@ -248,6 +275,8 @@ allDone:
     End Sub
 
     Private Function getObjCount(mT As threadingArgs) As Long
+        getObjCount = 0
+
         Select Case mT.qType
             Case "Devices"
                 Return deviceS1.Count
@@ -378,22 +407,32 @@ allDone:
                 Application.DoEvents()
                 Thread.Sleep(100)
             Loop
-            lockingObj = True
+            '            lockingObj = True
         End If
+        '
+        lockingObj = True
 
-        Dim waitingOnNDX = grpNDX(device1Nums, firstNum.ToString)
 
-        If waitingOnNDX = 0 Then
-            'addLOG("Received " + firstNum.ToString + " but did not expect it")
-            lockingObj = False
-            Exit Sub
-        Else
-            'process search results
-            'remove from queue
+        'If waitingOnNDX = 0 Then
+        'addLOG("Received " + firstNum.ToString + " but did not expect it")
+        'lockingObj = False
+        'Exit Sub
+        'Else
+        'process search results
+        'remove from queue
 
-            'addLOG("Received " + firstNum.ToString + ".. processing")
-            device1Nums.Remove(waitingOnNDX)
-        End If
+        Dim j$ = Mid(jsoN, InStr(jsoN, "next") - 1, 20)
+        j = Mid(j, 1, InStr(j, ",") - 1)
+
+        addLOG("Rcvd " + firstNum.ToString + ".. processing. JSON: " + j)
+        '        threadResults(waitingOnNDX - 1) = jsoN
+        deviceString.Add(jsoN)
+        If firstNum > 0 Then firstNum = firstNum / 100
+        deviceCompleted.Add(firstNum)
+        'End If
+
+        lockingObj = False
+        Exit Sub
 
         Select Case qryType
             Case "Devices"
@@ -425,6 +464,8 @@ allDone:
                 Call addAlerts(jsoN, alertS1, firstNum)
 
         End Select
+
+        Application.DoEvents()
 
         lockingObj = False
 
@@ -529,6 +570,22 @@ allDone:
         rArgs.s1 = O.FileName
 
         xlsEngine.RunWorkerAsync(rArgs)
+
+    End Sub
+
+    Private Sub getOVA_DoWork(sender As Object, e As DoWorkEventArgs) Handles getOVA.DoWork
+        If authInfo.tokeN = "" Then
+            MsgBox("Not authenticated.. Check your Secret Key!", vbOKOnly, "Not Connected")
+            Exit Sub
+        End If
+
+        AClient = New ARMclient(authInfo)
+        AClient.getImage(authInfo)
+
+    End Sub
+
+    Private Sub btnOVA_Click(sender As Object, e As EventArgs) Handles btnOVA.Click
+        getOVA.RunWorkerAsync()
 
     End Sub
 End Class

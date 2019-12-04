@@ -99,7 +99,15 @@ Public Class ARMclient
     Public tokenExpires As DateTime
     Private theKey$
 
-    Public Event searchQueryReturned(jsoN$, firstNum As Long, qryType As String)
+    Private currCreds As apiAuthInfo
+
+    Public currQry$
+    Public currBeginNDX As Long
+    Public currQueryType$
+
+    Public lastResult$
+
+    Public Event searchQueryReturned(ByVal jsoN$, ByVal firstNum As Long, ByVal qryType As String)
     Public Sub New(ByRef authInfo As apiAuthInfo)
         'when setting up new client
         'can use token from previous clients
@@ -116,12 +124,26 @@ Public Class ARMclient
             Exit Sub
         End If
 
-        fqdN = authInfo.fqdN
-        theKey = authInfo.secretKey
+        currCreds = New apiAuthInfo
+
+        With currCreds
+            .secretKey = authInfo.secretKey
+            .fqdN = authInfo.fqdN
+            fqdN = .fqdN
+            theKey = .secretKey
+        End With
 
         gotToken = False
 
-        Call GetToken(authInfo)
+        Call GetToken(currCreds)
+
+        With authInfo
+            .secretKey = currCreds.secretKey
+            .tokeN = currCreds.tokeN
+            .tokenExpires = currCreds.tokenExpires
+            tokeN = .tokeN
+            tokenExpires = .tokenExpires
+        End With
     End Sub
 
 
@@ -277,16 +299,75 @@ errorcatch:
         Return ""
     End Function
 
-    Public Function searchAPI(tInfo As threadingArgs) As String
+
+    Public Function getImage(authInfo As apiAuthInfo) As String
+
+        Dim client = New RestClient(fqdN + "/api/v1/ova_create/8153/")
+        Dim request = New RestRequest(Method.POST)
+        request.AddHeader("Cache-Control", "no-cache")
+        request.AddHeader("Authorization", tokeN)
+
+        request.AddHeader("Content-Type", "application/x-www-form-urlencoded")
+
+        ' request.AddHeader("Content-Type", "application/json")
+        '        request.AddParameter("multipart / Form - Data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW", "------WebKitFormBoundary7MA4YWxkTrZu0gW" + Chr(13) + "Content-Disposition: Form-Data; name=" + Chr(34) + "secret_key" + Chr(34) + Chr(13) + secretKey + Chr(13) + "------WebKitFormBoundary7MA4YWxkTrZu0gW--", ParameterType.RequestBody)
+        '        request.AddParameter("undefined", "secret_key=" + secretKey, ParameterType.RequestBody)
+        '
+        request.AddParameter("undefined", "address=192.168.2.100", ParameterType.RequestBody) '  + secretKey, ParameterType.RequestBody)
+        request.AddParameter("undefined", "dnsNameservers=8.8.8.8,8.8.4.4", ParameterType.RequestBody)
+        request.AddParameter("undefined", "gateway=192.168.0.1", ParameterType.RequestBody)
+        request.AddParameter("undefined", "netmask=255.255.0.0", ParameterType.RequestBody)
+        request.AddParameter("undefined", "ntpServers=1.2.3.4,my.ntp.com", ParameterType.RequestBody)
+
+        Dim c$ = Chr(34)
+
+        Dim bodY$ = ""
+
+        'bodY = "{" + c$ + "address" + c$ + ":  " + c$ + "192.168.2.100" + c$ + "," + c$ + "dnsNameservers" + c$ + ": [" + c$ + "8.8.8.8" + c$ + ", " + c$ + "8.8.4.4" + c$ + "]," + c$ + "gateway" + c$ + ": " + c$ + "192.168.0.1" + c$ + "," + "netmask" + c$ + ": " + c$ + "255.255.0.0" + c$ + "," + c$ + "ntpServers" + c$ + ": [" + c$ + "1.2.3.4" + c$ + ", " + c$ + "my.ntp.com" + c$ + "]}"
+
+        'request.AddParameter("undefined", bodY, ParameterType.RequestBody)
+
+        Dim response As IRestResponse
+        response = client.Execute(request)
+
+        Dim a$ = ""
+
+        If IsNothing(response.Content) = False Then a$ = response.Content
+        If a = "" Then a = response.ErrorMessage
+
+        Dim msgResp$
+        msgResp = getJSONObject("message", a)
+        Dim succesS As Boolean
+        succesS = CBool(getJSONObject("success", a))
+
+        If succesS = False Or response.IsSuccessful = False Then
+            'MainUI.addLOG("ERROR:" + msgResp)
+            Return msgResp
+            Exit Function
+        Else
+            getImage = "True"
+        End If
+
+        a$ = ""
+
+
+    End Function
+
+
+    Public Sub searchAPI(qArgs As threadingArgs) ' As String
         'test for expired token & get new if necessary
         If DateDiff(DateInterval.Minute, Now.ToUniversalTime, tokenExpires) < 5 Then
             'within 5 minutes of being expired, get new token
-            Call GetToken(tInfo.authInfo)
+            Call GetToken(qArgs.authInfo)
         End If
 
-        searchAPI = ""
+        'searchAPI = ""
 
-        Dim qryString$ = fqdN + "/api/v1/search/?aql=" + tInfo.qrY + "&from=" + tInfo.nextNum.ToString + "&length=" + tInfo.numRecs.ToString
+        'Dim qrY$ = currQry
+        'Dim currNDX As Long = currBeginNDX
+        'Dim qryType$ = currQry
+
+        Dim qryString$ = fqdN + "/api/v1/search/?aql=" + qArgs.qrY + "&from=" + qArgs.nextNum.ToString + "&length=" + qArgs.numRecs.ToString
 
         Dim client = New RestClient(qryString)
 
@@ -317,10 +398,12 @@ errorcatch:
             'MainUI.addLOG("Search query returned - " + qryString)
         End If
 
-        searchAPI = a
+        'searchAPI = a
 
-        RaiseEvent searchQueryReturned(a, tInfo.nextNum, tInfo.qType)
+        lastResult = a
 
-    End Function
+        RaiseEvent searchQueryReturned(a, qArgs.nextNum, "Devices")
+
+    End Sub
 
 End Class

@@ -33,9 +33,11 @@ Partial Class MainUI
         Me.Label3 = New System.Windows.Forms.Label()
         Me.logTB = New System.Windows.Forms.TextBox()
         Me.Timer1 = New System.Windows.Forms.Timer(Me.components)
+        Me.xlsEngine = New System.ComponentModel.BackgroundWorker()
+        Me.getOVA = New System.ComponentModel.BackgroundWorker()
+        Me.btnOVA = New System.Windows.Forms.Button()
         Me.QueryContainer2 = New AQL2XLS_WinApp.QueryContainer()
         Me.QueryContainer1 = New AQL2XLS_WinApp.QueryContainer()
-        Me.xlsEngine = New System.ComponentModel.BackgroundWorker()
         CType(Me.PictureBox1, System.ComponentModel.ISupportInitialize).BeginInit()
         Me.SuspendLayout()
         '
@@ -69,7 +71,7 @@ Partial Class MainUI
         Me.TextBox1.Name = "TextBox1"
         Me.TextBox1.Size = New System.Drawing.Size(131, 22)
         Me.TextBox1.TabIndex = 4
-        Me.TextBox1.Text = "demo"
+        Me.TextBox1.Text = "ohiohealth"
         '
         'Label1
         '
@@ -101,7 +103,7 @@ Partial Class MainUI
         Me.TextBox2.Name = "TextBox2"
         Me.TextBox2.Size = New System.Drawing.Size(178, 22)
         Me.TextBox2.TabIndex = 7
-        Me.TextBox2.Text = "093aa619e5e94d29a81897f051dc10028e7cdeb0fbad30e20e1bc7e072ba1fea"
+        Me.TextBox2.Text = "3682448d47f88a2e49118131c32e0a9e7e0973001d8cc8d61510450eee9472e1"
         '
         'Label3
         '
@@ -129,6 +131,23 @@ Partial Class MainUI
         '
         Me.Timer1.Enabled = True
         '
+        'xlsEngine
+        '
+        '
+        'getOVA
+        '
+        '
+        'btnOVA
+        '
+        Me.btnOVA.Font = New System.Drawing.Font("Segoe UI", 9.75!, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, CType(0, Byte))
+        Me.btnOVA.ForeColor = System.Drawing.Color.Navy
+        Me.btnOVA.Location = New System.Drawing.Point(59, 414)
+        Me.btnOVA.Name = "btnOVA"
+        Me.btnOVA.Size = New System.Drawing.Size(78, 25)
+        Me.btnOVA.TabIndex = 10
+        Me.btnOVA.Text = "Get OVA"
+        Me.btnOVA.UseVisualStyleBackColor = True
+        '
         'QueryContainer2
         '
         Me.QueryContainer2.BackColor = System.Drawing.Color.White
@@ -145,15 +164,13 @@ Partial Class MainUI
         Me.QueryContainer1.Size = New System.Drawing.Size(551, 219)
         Me.QueryContainer1.TabIndex = 1
         '
-        'xlsEngine
-        '
-        '
         'MainUI
         '
         Me.AutoScaleDimensions = New System.Drawing.SizeF(6.0!, 13.0!)
         Me.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font
         Me.BackColor = System.Drawing.Color.White
         Me.ClientSize = New System.Drawing.Size(759, 441)
+        Me.Controls.Add(Me.btnOVA)
         Me.Controls.Add(Me.logTB)
         Me.Controls.Add(Me.Label3)
         Me.Controls.Add(Me.TextBox2)
@@ -186,4 +203,6 @@ Partial Class MainUI
     Friend WithEvents logTB As TextBox
     Friend WithEvents Timer1 As Timer
     Friend WithEvents xlsEngine As System.ComponentModel.BackgroundWorker
+    Friend WithEvents getOVA As System.ComponentModel.BackgroundWorker
+    Friend WithEvents btnOVA As Button
 End Class

@@ -99,6 +99,7 @@ Partial Class QueryContainer
         Me.btnJson.Size = New System.Drawing.Size(56, 56)
         Me.btnJson.TabIndex = 5
         Me.btnJson.UseVisualStyleBackColor = True
+        Me.btnJson.Visible = False
         '
         'btnGo
         '
