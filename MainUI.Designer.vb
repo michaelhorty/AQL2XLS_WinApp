@@ -71,7 +71,7 @@ Partial Class MainUI
         Me.TextBox1.Name = "TextBox1"
         Me.TextBox1.Size = New System.Drawing.Size(131, 22)
         Me.TextBox1.TabIndex = 4
-        Me.TextBox1.Text = "ohiohealth"
+        Me.TextBox1.Text = "demo"
         '
         'Label1
         '
@@ -103,7 +103,7 @@ Partial Class MainUI
         Me.TextBox2.Name = "TextBox2"
         Me.TextBox2.Size = New System.Drawing.Size(178, 22)
         Me.TextBox2.TabIndex = 7
-        Me.TextBox2.Text = "3682448d47f88a2e49118131c32e0a9e7e0973001d8cc8d61510450eee9472e1"
+        Me.TextBox2.Text = "093aa619e5e94d29a81897f051dc10028e7cdeb0fbad30e20e1bc7e072ba1fea"
         '
         'Label3
         '
