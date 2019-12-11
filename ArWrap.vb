@@ -1,6 +1,6 @@
 ﻿Imports RestSharp
 Imports Newtonsoft.Json
-
+Imports Newtonsoft.Json.Linq
 Public Class ovaArgs
     Public ip$
     Public netM$
@@ -267,6 +267,27 @@ Public Class ARMclient
         deserializeDeviceResponse = JsonConvert.DeserializeObject(Of List(Of deviceData))(jList)
     End Function
 
+    Public Function deserializeImageStatus(ByRef jsoN$) As String
+
+        Dim jsonObject As Newtonsoft.Json.Linq.JObject = Newtonsoft.Json.Linq.JObject.Parse(jsoN)
+        '        Dim jsonArray As JArray = jsonObject("result")
+
+        deserializeImageStatus = ""
+        deserializeImageStatus += jsonObject("data").Item("status").ToString
+
+        If InStr(deserializeImageStatus, "COMPLETED") Then
+            Dim a$
+            a$ = ""
+        End If
+
+        '.count = jsonObject("data").Item("count")
+        '    .prev = jsonObject("data").Item("prev")
+        '    .nextResults = jsonObject("data").Item("next")
+        'End With
+
+
+    End Function
+
     Public Function deserializeAlertResponse(ByRef json$) As List(Of AlertData)
         deserializeAlertResponse = New List(Of AlertData)
 
@@ -379,7 +400,47 @@ errorcatch:
         End If
 
     End Function
+    Public Function getImageStatus(authInfo As apiAuthInfo, ovaID$) As String
+        If DateDiff(DateInterval.Minute, Now.ToUniversalTime, authInfo.tokenExpires) < 5 Then
+            Call GetToken(authInfo)
+        End If
 
+        Dim client = New RestClient(fqdN + "/api/v1/ova_create/" + ovaID + "/")
+        Dim request = New RestRequest(Method.GET)
+        request.AddHeader("Cache-Control", "no-cache")
+        request.AddHeader("Authorization", tokeN)
+
+        Dim response As IRestResponse
+        response = client.Execute(request)
+
+        Dim a$ = ""
+
+        If IsNothing(response.Content) = False Then a$ = response.Content
+        If a = "" Then a = response.ErrorMessage
+
+        If response.IsSuccessful = False Then
+            Return a
+            Exit Function
+
+        End If
+
+        Dim msgResp$
+        msgResp = getJSONObject("message", a)
+        Dim succesS As Boolean
+        succesS = CBool(getJSONObject("success", a))
+
+        If succesS = False Then
+            'MainUI.addLOG("ERROR:" + msgResp)
+            Return msgResp
+            Exit Function
+        Else
+            getImageStatus = a
+        End If
+
+        a$ = ""
+
+
+    End Function
     Public Function makeImage(ByRef authInfo As apiAuthInfo, ByRef ovaInfo As ovaArgs) As String
         If DateDiff(DateInterval.Minute, Now.ToUniversalTime, authInfo.tokenExpires) < 5 Then
             Call GetToken(authInfo)

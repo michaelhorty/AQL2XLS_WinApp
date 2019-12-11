@@ -591,8 +591,43 @@ allDone:
         If a <> "True" Then
             addLOG("ERROR:" + a)
             Exit Sub
+        Else
+            addLOG("Submitted OVA request for collector #" + ovaInfo.ovaID.ToString)
         End If
 
+        a$ = ""
+        Thread.Sleep(3000)
+
+        a$ = AClient.getImageStatus(authInfo, ovaInfo.ovaID.ToString)
+
+        Dim currStatus$
+        currStatus = AClient.deserializeImageStatus(a)
+
+        If InStr(currStatus, "NOT_REQUESTED") Then
+            addLOG("OVA" + ovaInfo.ovaID.ToString + ": NOT_REQUESTED-" + "There is a problem with the job. Contact support.")
+            Exit Sub
+        End If
+        addLOG("OVA" + ovaInfo.ovaID.ToString + ": " + currStatus)
+
+        Do Until InStr(currStatus, "COMPLETE")
+            Application.DoEvents()
+            Thread.Sleep(5000)
+            Application.DoEvents()
+            a$ = AClient.getImageStatus(authInfo, ovaInfo.ovaID.ToString)
+            currStatus = AClient.deserializeImageStatus(a)
+
+            If InStr(currStatus, "NOT_REQUESTED") Then
+                addLOG("OVA" + ovaInfo.ovaID.ToString + ": NOT_REQUESTED-" + "There is a problem with the job. Contact support.")
+                Exit Sub
+            End If
+
+            addLOG("OVA" + ovaInfo.ovaID.ToString + ":" + currStatus)
+
+        Loop
+
+        a$ = "must have complete here now"
+
+        addLOG("OVA" + ovaInfo.ovaID.ToString + ": " + currStatus)
     End Sub
 
     Private Sub btnOVA_Click(sender As Object, e As EventArgs) Handles btnOVA.Click
@@ -655,5 +690,9 @@ allDone:
         End With
 
         getOVA.RunWorkerAsync(ovaDetails)
+    End Sub
+
+    Private Sub getOVA_RunWorkerCompleted(sender As Object, e As RunWorkerCompletedEventArgs) Handles getOVA.RunWorkerCompleted
+        btnOVA.Visible = True
     End Sub
 End Class
