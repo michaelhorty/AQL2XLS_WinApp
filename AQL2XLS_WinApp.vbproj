@@ -114,6 +114,12 @@
     <Compile Include="QueryContainer.vb">
       <SubType>UserControl</SubType>
     </Compile>
+    <Compile Include="newOvaProp.Designer.vb">
+      <DependentUpon>newOvaProp.vb</DependentUpon>
+    </Compile>
+    <Compile Include="newOvaProp.vb">
+      <SubType>UserControl</SubType>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="MainUI.resx">
@@ -127,6 +133,9 @@
     </EmbeddedResource>
     <EmbeddedResource Include="QueryContainer.resx">
       <DependentUpon>QueryContainer.vb</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="newOvaProp.resx">
+      <DependentUpon>newOvaProp.vb</DependentUpon>
     </EmbeddedResource>
   </ItemGroup>
   <ItemGroup>

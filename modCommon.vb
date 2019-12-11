@@ -3,6 +3,23 @@ Imports System.IO
 
 Module modCommon
 
+    Public Function csvTOquotedList(ByVal a$) As String
+        Dim b$ = ""
+
+        Dim C As Object
+        C = Split(a, ",")
+
+        Dim d$
+        d = Chr(34)
+
+        Dim K As Integer
+        For K = 0 To UBound(C)
+            b += d + C(K) + d + ","
+        Next
+
+        b = Mid(b, 1, Len(b) - 1)
+        Return b$
+    End Function
     Public Sub saveJSONtoFile(jsonString$, ByVal errFN$, ByRef add2zip As Collection)
 
         Dim fileN$ = errFN

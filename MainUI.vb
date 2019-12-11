@@ -20,6 +20,7 @@ Public Class MainUI
 
     Private WithEvents AClient As ARMclient
 
+    Private ovaList As Collection
     Private deviceCompleted As Collection
     Private deviceString As Collection
     Private Sub MainUI_Load(sender As Object, e As EventArgs) Handles MyBase.Load
@@ -578,14 +579,81 @@ allDone:
             MsgBox("Not authenticated.. Check your Secret Key!", vbOKOnly, "Not Connected")
             Exit Sub
         End If
+        Dim a$ = ""
+
+        Dim ovaInfo As ovaArgs
+        ovaInfo = e.Argument
 
         AClient = New ARMclient(authInfo)
-        AClient.getImage(authInfo)
+
+
+        a$ = AClient.makeImage(authInfo, ovaInfo)
+        If a <> "True" Then
+            addLOG("ERROR:" + a)
+            Exit Sub
+        End If
 
     End Sub
 
     Private Sub btnOVA_Click(sender As Object, e As EventArgs) Handles btnOVA.Click
-        getOVA.RunWorkerAsync()
 
+        If authInfo.tokeN = "" Then
+            MsgBox("Not authenticated.. Check your Secret Key!", vbOKOnly, "Not Connected")
+            Exit Sub
+        End If
+        Dim a$ = ""
+        btnOVA.Visible = False
+
+        AClient = New ARMclient(authInfo)
+
+        a$ = AClient.getAvailOVAs(authInfo)
+
+        If a = "False" Then
+            addLOG("Unable to get OVA List")
+            Exit Sub
+            btnOVA.Visible = True
+        End If
+
+        Dim nL As List(Of availOVAresp)
+        ovaList = AClient.deserializeOVAList(a)
+
+        Call NewOVActl1.setupCTL(ovaList)
+
+        QueryContainer1.Visible = False
+        QueryContainer2.Visible = False
+        NewOVActl1.Visible = True
+
+        Exit Sub
+
+
+    End Sub
+
+    Private Sub NewOVActl1_userCancelled() Handles NewOVActl1.userCancelled
+        NewOVActl1.Visible = False
+        QueryContainer1.Visible = True
+        addLOG("User cancelled OVA creation")
+        btnOVA.Visible = True
+    End Sub
+
+    Private Sub NewOVActl1_createOVA(ipAddy As String, netMask As String, gateWay As String, ntpServer As String, dnsServer As String, proxy As String, ovaID As String) Handles NewOVActl1.createOVA
+        NewOVActl1.Visible = False
+        QueryContainer1.Visible = True
+
+        Dim ovaDetails As ovaArgs
+        ovaDetails = New ovaArgs
+
+        addLOG("Creating new OVA")
+
+        With ovaDetails
+            .ip = ipAddy
+            .netM = netMask
+            .gWay = gateWay
+            .ntP = ntpServer
+            .dnS = dnsServer
+            .proxY = proxy
+            .ovaID = ovaID
+        End With
+
+        getOVA.RunWorkerAsync(ovaDetails)
     End Sub
 End Class

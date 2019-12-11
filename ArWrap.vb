@@ -1,7 +1,15 @@
 ﻿Imports RestSharp
 Imports Newtonsoft.Json
 
-
+Public Class ovaArgs
+    Public ip$
+    Public netM$
+    Public gWay$
+    Public ntP$
+    Public dnS$
+    Public proxY$
+    Public ovaID$
+End Class
 
 Public Class threadingArgs
     Public authInfo As apiAuthInfo
@@ -54,7 +62,9 @@ Public Class deviceData
     Public user$
 
 End Class
-
+Public Class availOVAresp
+    Public ova_ids() As String
+End Class
 Public Class alertData
 
 End Class
@@ -157,6 +167,17 @@ Public Class ARMclient
         'On Error GoTo errorcatch
         Dim secretKey$ = authInfo.secretKey
 
+        If Len(theKey) Then secretKey = theKey
+
+        If authInfo.tokenExpires < tokenExpires And DateDiff(DateInterval.Minute, Now.ToUniversalTime, tokenExpires) > 5 Then
+            With authInfo
+                .tokenExpires = tokenExpires
+                .tokeN = tokeN
+            End With
+            GetToken = "True"
+            Exit Function
+        End If
+
         Dim a$ = "Response empty"
         GetToken = a
 
@@ -202,6 +223,26 @@ Public Class ARMclient
 
         Return "True"
         Exit Function
+
+    End Function
+
+    Public Function deserializeOVAList(ByRef json$) As Collection
+        Dim jList$ = ""
+        jList = Mid(json, InStr(json, "[") + 1)
+        jList = Mid(jList, 1, InStr(jList, "]") - 1)
+        jList = Replace(jList, " ", "")
+        jList = Replace(jList, vbLf, "")
+
+        Dim K As Long
+        Dim a As Object
+        a = Split(jList, ",")
+
+        deserializeOVAList = New Collection
+
+        For K = 0 To UBound(a)
+            deserializeOVAList.Add(a(K))
+        Next
+
 
     End Function
 
@@ -299,33 +340,77 @@ errorcatch:
         Return ""
     End Function
 
+    Public Function getAvailOVAs(ByRef authInfo As apiAuthInfo) As String
+        If DateDiff(DateInterval.Minute, Now.ToUniversalTime, authInfo.tokenExpires) < 5 Then
+            Call GetToken(authInfo)
+        End If
 
-    Public Function getImage(authInfo As apiAuthInfo) As String
+        Dim qryString$ = fqdN + "/api/v1/ovas/" '
 
-        Dim client = New RestClient(fqdN + "/api/v1/ova_create/8153/")
+        Dim client = New RestClient(qryString)
+
+        Dim request = New RestRequest(Method.GET)
+        request.AddHeader("Cache-Control", "no-cache")
+        request.AddHeader("Authorization", tokeN)
+
+        Dim response As IRestResponse
+        response = client.Execute(request)
+
+        Dim a$ = "Response empty"
+
+
+        If IsNothing(response.Content) = False Then a$ = response.Content
+        If a = "" Then a = response.ErrorMessage
+
+        If response.IsSuccessful = False Then
+            Return a
+        End If
+
+        Dim msgResp$
+        msgResp = getJSONObject("message", a)
+        Dim succesS As Boolean
+
+        succesS = CBool(getJSONObject("success", a))
+
+        If succesS = False Then
+            Return "False: " + msgResp
+        Else
+            Return a
+        End If
+
+    End Function
+
+    Public Function makeImage(ByRef authInfo As apiAuthInfo, ByRef ovaInfo As ovaArgs) As String
+        If DateDiff(DateInterval.Minute, Now.ToUniversalTime, authInfo.tokenExpires) < 5 Then
+            Call GetToken(authInfo)
+        End If
+
+        Dim client = New RestClient(fqdN + "/api/v1/ova_create/" + ovaInfo.ovaID + "/")
         Dim request = New RestRequest(Method.POST)
         request.AddHeader("Cache-Control", "no-cache")
         request.AddHeader("Authorization", tokeN)
 
-        request.AddHeader("Content-Type", "application/x-www-form-urlencoded")
+        'request.AddHeader("Content-Type", "application/x-www-form-urlencoded")
 
-        ' request.AddHeader("Content-Type", "application/json")
+        request.AddHeader("Content-Type", "application/json")
         '        request.AddParameter("multipart / Form - Data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW", "------WebKitFormBoundary7MA4YWxkTrZu0gW" + Chr(13) + "Content-Disposition: Form-Data; name=" + Chr(34) + "secret_key" + Chr(34) + Chr(13) + secretKey + Chr(13) + "------WebKitFormBoundary7MA4YWxkTrZu0gW--", ParameterType.RequestBody)
         '        request.AddParameter("undefined", "secret_key=" + secretKey, ParameterType.RequestBody)
         '
-        request.AddParameter("undefined", "address=192.168.2.100", ParameterType.RequestBody) '  + secretKey, ParameterType.RequestBody)
-        request.AddParameter("undefined", "dnsNameservers=8.8.8.8,8.8.4.4", ParameterType.RequestBody)
-        request.AddParameter("undefined", "gateway=192.168.0.1", ParameterType.RequestBody)
-        request.AddParameter("undefined", "netmask=255.255.0.0", ParameterType.RequestBody)
-        request.AddParameter("undefined", "ntpServers=1.2.3.4,my.ntp.com", ParameterType.RequestBody)
+        'request.AddParameter("undefined", "address=192.168.2.100", ParameterType.RequestBody) '  + secretKey, ParameterType.RequestBody)
+        'request.AddParameter("undefined", "dnsNameservers=8.8.8.8,8.8.4.4", ParameterType.RequestBody)
+        ''request.AddParameter("undefined", "gateway=192.168.0.1", ParameterType.RequestBody)
+        'request.AddParameter("undefined", "netmask=255.255.0.0", ParameterType.RequestBody)
+        'request.AddParameter("undefined", "ntpServers=1.2.3.4,my.ntp.com", ParameterType.RequestBody)
 
         Dim c$ = Chr(34)
 
         Dim bodY$ = ""
 
-        'bodY = "{" + c$ + "address" + c$ + ":  " + c$ + "192.168.2.100" + c$ + "," + c$ + "dnsNameservers" + c$ + ": [" + c$ + "8.8.8.8" + c$ + ", " + c$ + "8.8.4.4" + c$ + "]," + c$ + "gateway" + c$ + ": " + c$ + "192.168.0.1" + c$ + "," + "netmask" + c$ + ": " + c$ + "255.255.0.0" + c$ + "," + c$ + "ntpServers" + c$ + ": [" + c$ + "1.2.3.4" + c$ + ", " + c$ + "my.ntp.com" + c$ + "]}"
+        'bodY = "{" + c$ + "address" + c$ + ":  " + c$ + ovainfo.ip + c$ + "," + c$ + "dnsNameservers" + c$ + ": [" + c$ + "8.8.8.8" + c$ + ", " + c$ + "8.8.4.4" + c$ + "]," + c$ + "gateway" + c$ + ": " + c$ + "192.168.0.1" + c$ + "," + c$ + "httpsProxy" + c$ + ": " + c$ + "https://myproxy.com" + c$ + "," + c$ + "netmask" + c$ + ": " + c$ + "255.255.0.0" + c$ + "," + c$ + "ntpServers" + c$ + ": [" + c$ + "1.2.3.4" + c$ + ", " + c$ + "my.ntp.com" + c$ + "]}"
 
-        'request.AddParameter("undefined", bodY, ParameterType.RequestBody)
+        bodY = "{" + c$ + "address" + c$ + ":  " + c$ + ovaInfo.ip + c$ + "," + c$ + "dnsNameservers" + c$ + ": [" + csvTOquotedList(ovaInfo.dnS) + "]," + c$ + "gateway" + c$ + ": " + c$ + ovaInfo.gWay + c$ + "," + c$ + "netmask" + c$ + ": " + c$ + ovaInfo.netM + c$ + "," + c$ + "ntpServers" + c$ + ": [" + csvTOquotedList(ovaInfo.ntP) + "]}"
+
+        request.AddJsonBody(bodY)
 
         Dim response As IRestResponse
         response = client.Execute(request)
@@ -335,17 +420,23 @@ errorcatch:
         If IsNothing(response.Content) = False Then a$ = response.Content
         If a = "" Then a = response.ErrorMessage
 
+        If response.IsSuccessful = False Then
+            Return a
+            Exit Function
+
+        End If
+
         Dim msgResp$
         msgResp = getJSONObject("message", a)
         Dim succesS As Boolean
         succesS = CBool(getJSONObject("success", a))
 
-        If succesS = False Or response.IsSuccessful = False Then
+        If succesS = False Then
             'MainUI.addLOG("ERROR:" + msgResp)
             Return msgResp
             Exit Function
         Else
-            getImage = "True"
+            makeImage = "True"
         End If
 
         a$ = ""
@@ -356,7 +447,7 @@ errorcatch:
 
     Public Sub searchAPI(qArgs As threadingArgs) ' As String
         'test for expired token & get new if necessary
-        If DateDiff(DateInterval.Minute, Now.ToUniversalTime, tokenExpires) < 5 Then
+        If DateDiff(DateInterval.Minute, Now.ToUniversalTime, qArgs.authInfo.tokenExpires) < 5 Then
             'within 5 minutes of being expired, get new token
             Call GetToken(qArgs.authInfo)
         End If

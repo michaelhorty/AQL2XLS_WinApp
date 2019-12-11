@@ -38,6 +38,7 @@ Partial Class MainUI
         Me.btnOVA = New System.Windows.Forms.Button()
         Me.QueryContainer2 = New AQL2XLS_WinApp.QueryContainer()
         Me.QueryContainer1 = New AQL2XLS_WinApp.QueryContainer()
+        Me.NewOVActl1 = New AQL2XLS_WinApp.newOVActl()
         CType(Me.PictureBox1, System.ComponentModel.ISupportInitialize).BeginInit()
         Me.SuspendLayout()
         '
@@ -71,7 +72,7 @@ Partial Class MainUI
         Me.TextBox1.Name = "TextBox1"
         Me.TextBox1.Size = New System.Drawing.Size(131, 22)
         Me.TextBox1.TabIndex = 4
-        Me.TextBox1.Text = "demo"
+        Me.TextBox1.Text = "testhorty4"
         '
         'Label1
         '
@@ -103,7 +104,7 @@ Partial Class MainUI
         Me.TextBox2.Name = "TextBox2"
         Me.TextBox2.Size = New System.Drawing.Size(178, 22)
         Me.TextBox2.TabIndex = 7
-        Me.TextBox2.Text = "093aa619e5e94d29a81897f051dc10028e7cdeb0fbad30e20e1bc7e072ba1fea"
+        Me.TextBox2.Text = "b9228b3ba7c793dc89ba91471a659cf2b086fe9f2d8c62281bd763bdd981070b"
         '
         'Label3
         '
@@ -164,12 +165,22 @@ Partial Class MainUI
         Me.QueryContainer1.Size = New System.Drawing.Size(551, 219)
         Me.QueryContainer1.TabIndex = 1
         '
+        'NewOVActl1
+        '
+        Me.NewOVActl1.BackColor = System.Drawing.Color.White
+        Me.NewOVActl1.Location = New System.Drawing.Point(206, 7)
+        Me.NewOVActl1.Name = "NewOVActl1"
+        Me.NewOVActl1.Size = New System.Drawing.Size(528, 265)
+        Me.NewOVActl1.TabIndex = 11
+        Me.NewOVActl1.Visible = False
+        '
         'MainUI
         '
         Me.AutoScaleDimensions = New System.Drawing.SizeF(6.0!, 13.0!)
         Me.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font
         Me.BackColor = System.Drawing.Color.White
         Me.ClientSize = New System.Drawing.Size(759, 441)
+        Me.Controls.Add(Me.NewOVActl1)
         Me.Controls.Add(Me.btnOVA)
         Me.Controls.Add(Me.logTB)
         Me.Controls.Add(Me.Label3)
@@ -205,4 +216,5 @@ Partial Class MainUI
     Friend WithEvents xlsEngine As System.ComponentModel.BackgroundWorker
     Friend WithEvents getOVA As System.ComponentModel.BackgroundWorker
     Friend WithEvents btnOVA As Button
+    Friend WithEvents NewOVActl1 As newOVActl
 End Class
