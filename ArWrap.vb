@@ -275,9 +275,8 @@ Public Class ARMclient
         deserializeImageStatus = ""
         deserializeImageStatus += jsonObject("data").Item("status").ToString
 
-        If InStr(deserializeImageStatus, "COMPLETED") Then
-            Dim a$
-            a$ = ""
+        If InStr(deserializeImageStatus, "COMPLETE") Then
+            deserializeImageStatus += " LINK:" + jsonObject("data").Item("downloadUrl").ToString
         End If
 
         '.count = jsonObject("data").Item("count")
@@ -540,10 +539,14 @@ errorcatch:
         msgResp = getJSONObject("message", a)
         Dim succesS As Boolean
 
-        succesS = CBool(getJSONObject("success", a))
+        Dim b$ = ""
+
+        b = getJSONObject("success", a)
+
+        If Len(b) Then succesS = CBool(b) Else succesS = False
 
         If response.IsSuccessful = False Or succesS = False Then
-            Call setError("Error to " + qryString + " - " + msgResp)
+            Call setError("Error to " + qryString.ToString + " - " + msgResp.ToString + " / " + response.ErrorMessage.ToString)
         End If
 
         If succesS = True Then ' if api response shows true

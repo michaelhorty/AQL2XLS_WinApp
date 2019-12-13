@@ -587,6 +587,13 @@ allDone:
         AClient = New ARMclient(authInfo)
 
 
+        a$ = AClient.getImageStatus(authInfo, ovaInfo.ovaID.ToString)
+        If InStr(a, "COMPLETE") Or InStr(a, "PROCESSI") Then
+            addLOG(a)
+            MsgBox("Image requested <7 days ago." + vbCrLf + a, vbOKOnly, "Image already requested")
+            Exit Sub
+        End If
+
         a$ = AClient.makeImage(authInfo, ovaInfo)
         If a <> "True" Then
             addLOG("ERROR:" + a)
@@ -611,7 +618,7 @@ allDone:
 
         Do Until InStr(currStatus, "COMPLETE")
             Application.DoEvents()
-            Thread.Sleep(5000)
+            Thread.Sleep(10000)
             Application.DoEvents()
             a$ = AClient.getImageStatus(authInfo, ovaInfo.ovaID.ToString)
             currStatus = AClient.deserializeImageStatus(a)
@@ -621,13 +628,16 @@ allDone:
                 Exit Sub
             End If
 
-            addLOG("OVA" + ovaInfo.ovaID.ToString + ":" + currStatus)
+            addLOG("OVA" + ovaInfo.ovaID.ToString + ": " + currStatus)
 
         Loop
 
-        a$ = "must have complete here now"
+        'a$ = "must have complete here now"
 
         addLOG("OVA" + ovaInfo.ovaID.ToString + ": " + currStatus)
+
+        MsgBox("Image good for 7 days" + vbCrLf + a, vbOKOnly, "Image created")
+
     End Sub
 
     Private Sub btnOVA_Click(sender As Object, e As EventArgs) Handles btnOVA.Click
@@ -694,5 +704,9 @@ allDone:
 
     Private Sub getOVA_RunWorkerCompleted(sender As Object, e As RunWorkerCompletedEventArgs) Handles getOVA.RunWorkerCompleted
         btnOVA.Visible = True
+    End Sub
+
+    Private Sub TextBox2_TextChanged(sender As Object, e As EventArgs) Handles TextBox2.TextChanged
+
     End Sub
 End Class

@@ -36,9 +36,9 @@ Partial Class MainUI
         Me.xlsEngine = New System.ComponentModel.BackgroundWorker()
         Me.getOVA = New System.ComponentModel.BackgroundWorker()
         Me.btnOVA = New System.Windows.Forms.Button()
+        Me.NewOVActl1 = New AQL2XLS_WinApp.newOVActl()
         Me.QueryContainer2 = New AQL2XLS_WinApp.QueryContainer()
         Me.QueryContainer1 = New AQL2XLS_WinApp.QueryContainer()
-        Me.NewOVActl1 = New AQL2XLS_WinApp.newOVActl()
         CType(Me.PictureBox1, System.ComponentModel.ISupportInitialize).BeginInit()
         Me.SuspendLayout()
         '
@@ -104,7 +104,7 @@ Partial Class MainUI
         Me.TextBox2.Name = "TextBox2"
         Me.TextBox2.Size = New System.Drawing.Size(178, 22)
         Me.TextBox2.TabIndex = 7
-        Me.TextBox2.Text = "b9228b3ba7c793dc89ba91471a659cf2b086fe9f2d8c62281bd763bdd981070b"
+        Me.TextBox2.Text = "20cd3a6a2206554aa5dbe720f64d505ab83982ac054f7a2cac8936c070d55caf"
         '
         'Label3
         '
@@ -149,6 +149,15 @@ Partial Class MainUI
         Me.btnOVA.Text = "Get OVA"
         Me.btnOVA.UseVisualStyleBackColor = True
         '
+        'NewOVActl1
+        '
+        Me.NewOVActl1.BackColor = System.Drawing.Color.White
+        Me.NewOVActl1.Location = New System.Drawing.Point(206, 7)
+        Me.NewOVActl1.Name = "NewOVActl1"
+        Me.NewOVActl1.Size = New System.Drawing.Size(528, 265)
+        Me.NewOVActl1.TabIndex = 11
+        Me.NewOVActl1.Visible = False
+        '
         'QueryContainer2
         '
         Me.QueryContainer2.BackColor = System.Drawing.Color.White
@@ -164,15 +173,6 @@ Partial Class MainUI
         Me.QueryContainer1.Name = "QueryContainer1"
         Me.QueryContainer1.Size = New System.Drawing.Size(551, 219)
         Me.QueryContainer1.TabIndex = 1
-        '
-        'NewOVActl1
-        '
-        Me.NewOVActl1.BackColor = System.Drawing.Color.White
-        Me.NewOVActl1.Location = New System.Drawing.Point(206, 7)
-        Me.NewOVActl1.Name = "NewOVActl1"
-        Me.NewOVActl1.Size = New System.Drawing.Size(528, 265)
-        Me.NewOVActl1.TabIndex = 11
-        Me.NewOVActl1.Visible = False
         '
         'MainUI
         '
