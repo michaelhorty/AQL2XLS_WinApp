@@ -104,7 +104,7 @@ Partial Class MainUI
         Me.TextBox2.Name = "TextBox2"
         Me.TextBox2.Size = New System.Drawing.Size(178, 22)
         Me.TextBox2.TabIndex = 7
-        Me.TextBox2.Text = "20cd3a6a2206554aa5dbe720f64d505ab83982ac054f7a2cac8936c070d55caf"
+        Me.TextBox2.Text = "c1b2d2fdd8ad6b2589ce2f19a7dbd2ecccb8c10a571bffec3a92d6f247568f49"
         '
         'Label3
         '
@@ -193,6 +193,7 @@ Partial Class MainUI
         Me.Controls.Add(Me.PictureBox1)
         Me.Controls.Add(Me.Label1)
         Me.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedDialog
+        Me.Icon = CType(resources.GetObject("$this.Icon"), System.Drawing.Icon)
         Me.MaximizeBox = False
         Me.Name = "MainUI"
         Me.Text = "Armis AQL2XLS"

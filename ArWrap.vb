@@ -21,7 +21,7 @@ Public Class threadingArgs
         Get
             Dim objType1$ = "Undefined"
             If LCase(Mid(qrY, 1, 10)) = "in:devices" Then objType1 = "Devices"
-            If LCase(Mid(qrY, 1, 13)) = "in:activity" Then objType1 = "Activity"
+            If LCase(Mid(qrY, 1, 11)) = "in:activity" Then objType1 = "Activity"
             If LCase(Mid(qrY, 1, 9)) = "in:alerts" Then objType1 = "Alerts"
             Return objType1
         End Get
@@ -267,7 +267,7 @@ Public Class ARMclient
         deserializeDeviceResponse = JsonConvert.DeserializeObject(Of List(Of deviceData))(jList)
     End Function
 
-    Public Function deserializeImageStatus(ByRef jsoN$) As String
+    Public Function deserializeImageStatus(ByRef jsoN$, Optional ByVal downloadURLonly As Boolean = False) As String
 
         Dim jsonObject As Newtonsoft.Json.Linq.JObject = Newtonsoft.Json.Linq.JObject.Parse(jsoN)
         '        Dim jsonArray As JArray = jsonObject("result")
@@ -277,6 +277,7 @@ Public Class ARMclient
 
         If InStr(deserializeImageStatus, "COMPLETE") Then
             deserializeImageStatus += " LINK:" + jsonObject("data").Item("downloadUrl").ToString
+            If downloadURLonly = True Then deserializeImageStatus = jsonObject("data").Item("downloadUrl").ToString
         End If
 
         '.count = jsonObject("data").Item("count")
@@ -287,8 +288,8 @@ Public Class ARMclient
 
     End Function
 
-    Public Function deserializeAlertResponse(ByRef json$) As List(Of AlertData)
-        deserializeAlertResponse = New List(Of AlertData)
+    Public Function deserializeAlertResponse(ByRef json$) As List(Of alertData)
+        deserializeAlertResponse = New List(Of alertData)
 
         Dim jList$ = ""
         jList = Mid(json, InStr(json, "[") - 1)
@@ -305,7 +306,7 @@ Public Class ARMclient
             a = Mid(jList, K, 1)
         Loop
 
-        deserializeAlertResponse = JsonConvert.DeserializeObject(Of List(Of AlertData))(jList)
+        deserializeAlertResponse = JsonConvert.DeserializeObject(Of List(Of alertData))(jList)
     End Function
 
     Public Function deserializeActivityResponse(ByRef json$) As List(Of ActivityData)

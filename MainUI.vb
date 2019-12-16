@@ -1,6 +1,6 @@
 ﻿Imports System.ComponentModel
 Imports System.Threading
-
+Imports System.Net
 
 
 Public Class MainUI
@@ -23,6 +23,8 @@ Public Class MainUI
     Private ovaList As Collection
     Private deviceCompleted As Collection
     Private deviceString As Collection
+
+    Private ovaFilename$
     Private Sub MainUI_Load(sender As Object, e As EventArgs) Handles MyBase.Load
         ' main entry point
         loggingEnabled = True
@@ -161,6 +163,7 @@ errorcatch:
 
         If mThreading.qType = "Undefined" Then
             MsgBox("SEARCH queries support Devices, Activities and Alerts. Please enter a valid query.", vbOKOnly, "Invalid Query")
+            Exit Sub
         End If
 
         ' changing class globals didnt help
@@ -586,12 +589,14 @@ allDone:
 
         AClient = New ARMclient(authInfo)
 
+        Dim currStatus$
 
         a$ = AClient.getImageStatus(authInfo, ovaInfo.ovaID.ToString)
         If InStr(a, "COMPLETE") Or InStr(a, "PROCESSI") Then
-            addLOG(a)
-            MsgBox("Image requested <7 days ago." + vbCrLf + a, vbOKOnly, "Image already requested")
-            Exit Sub
+            addLOG("ALREADY EXISTS: Image <7 days old")
+            '            MsgBox("Image requested <7 days ago." + vbCrLf + a, vbOKOnly, "Image already requested")
+            currStatus = a
+            GoTo downloadIMAGE
         End If
 
         a$ = AClient.makeImage(authInfo, ovaInfo)
@@ -607,7 +612,6 @@ allDone:
 
         a$ = AClient.getImageStatus(authInfo, ovaInfo.ovaID.ToString)
 
-        Dim currStatus$
         currStatus = AClient.deserializeImageStatus(a)
 
         If InStr(currStatus, "NOT_REQUESTED") Then
@@ -634,10 +638,15 @@ allDone:
 
         'a$ = "must have complete here now"
 
+downloadIMAGE:
+        Dim dlImg$
+        dlImg = AClient.deserializeImageStatus(currStatus, True)
+
+        ovaFilename = dlImg
+
         addLOG("OVA" + ovaInfo.ovaID.ToString + ": " + currStatus)
 
-        MsgBox("Image good for 7 days" + vbCrLf + a, vbOKOnly, "Image created")
-
+        'MsgBox("Image good for 7 days" + vbCrLf + a, vbOKOnly, "Image created")
     End Sub
 
     Private Sub btnOVA_Click(sender As Object, e As EventArgs) Handles btnOVA.Click
@@ -703,6 +712,26 @@ allDone:
     End Sub
 
     Private Sub getOVA_RunWorkerCompleted(sender As Object, e As RunWorkerCompletedEventArgs) Handles getOVA.RunWorkerCompleted
+        If ovaFilename = "" Then GoTo nothingtoDo
+
+        Dim O As New SaveFileDialog
+        O.Filter = "OVA Files (*.ova)|*.ova|All files (*.*)|*.*"
+        O.CheckPathExists = True
+        O.Title = "Download Image - Save File As"
+        O.ShowDialog()
+
+        addLOG("Downloading file..")
+        Dim remoteUri As String = ovaFilename
+        Dim fileName As String = O.FileName
+
+        Using client As New WebClient()
+
+            client.DownloadFile(remoteUri, fileName)
+        End Using
+
+        addLOG("File downloaded and saved to " + O.FileName)
+        MsgBox("Download complete:" + vbCrLf + O.FileName, vbOKOnly, "Finished")
+nothingtoDo:
         btnOVA.Visible = True
     End Sub
 
