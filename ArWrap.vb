@@ -43,7 +43,13 @@ Public Class deviceResponseData
     Public total As Long
 
 End Class
-
+Public Class sensorData
+    Public name$
+End Class
+Public Class siteData
+    Public location$
+    Public name$
+End Class
 Public Class deviceData
     Public category$
     Public firstSeen$
@@ -57,9 +63,12 @@ Public Class deviceData
     Public operatingSystem$
     Public operatingSystemVersion$
     Public riskLevel As Long
+    Public sensor As sensorData
+    Public site As siteData
     Public tags$() ' As deviceTags
     Public type$
     Public user$
+    Public visibility$
 
 End Class
 Public Class availOVAresp
@@ -69,9 +78,9 @@ Public Class alertData
 
 End Class
 
-Public Class sensorData
-    Public name$
-End Class
+'Public Class sensorData'
+'Public name '$
+'End Class
 Public Class activityData
     Public activityId$
     Public activityUUID$
@@ -124,7 +133,7 @@ Public Class ARMclient
         'check expiry in here to obtain a new secret_key whenever necessary
         'this way can set up clients on the fly (multithreading)
 
-        If Len(authInfo.tokeN) Then
+        If Len(authInfo.tokeN) And Now.ToUniversalTime < authInfo.tokenExpires Then
             'already authorized, no need to get new token
             With authInfo
                 fqdN = .fqdN
@@ -169,14 +178,7 @@ Public Class ARMclient
 
         If Len(theKey) Then secretKey = theKey
 
-        If authInfo.tokenExpires < tokenExpires And DateDiff(DateInterval.Minute, Now.ToUniversalTime, tokenExpires) > 5 Then
-            With authInfo
-                .tokenExpires = tokenExpires
-                .tokeN = tokeN
-            End With
-            GetToken = "True"
-            Exit Function
-        End If
+
 
         Dim a$ = "Response empty"
         GetToken = a
@@ -247,10 +249,13 @@ Public Class ARMclient
     End Function
 
     Public Function deserializeDeviceResponse(ByRef json$) As List(Of deviceData)
+        'On Error Resume Next
+
         deserializeDeviceResponse = New List(Of deviceData)
 
         Dim jList$ = ""
         jList = Mid(json, InStr(json, "[") - 1)
+        If Mid(jList, 1, 1) = ":" Then jList = Mid(jList, 2)
 
         Dim K As Long
         Dim a$ = ""
@@ -332,6 +337,8 @@ Public Class ARMclient
 
 
     Public Function deserializeResponseData(ByRef json$) As deviceResponseData
+        On Error Resume Next
+
         deserializeResponseData = New deviceResponseData
 
         If Len(json) = 0 Then Exit Function
@@ -343,6 +350,7 @@ Public Class ARMclient
         With deserializeResponseData
             .total = jsonObject("data").Item("total")
             .count = jsonObject("data").Item("count")
+
             .prev = jsonObject("data").Item("prev")
             .nextResults = jsonObject("data").Item("next")
         End With
@@ -519,6 +527,18 @@ errorcatch:
         'Dim currNDX As Long = currBeginNDX
         'Dim qryType$ = currQry
 
+        Dim retrieS As Integer = 0
+
+doOver:
+        retrieS += 1
+
+        If retrieS > 3 Then
+            Call setError("Could not obtain new token - connection closed")
+            lastResult = "Connection closed by server - could not refresh token"
+            RaiseEvent searchQueryReturned(lastResult, qArgs.nextNum, "Devices")
+            Exit Sub
+        End If
+
         Dim qryString$ = fqdN + "/api/v1/search/?aql=" + qArgs.qrY + "&from=" + qArgs.nextNum.ToString + "&length=" + qArgs.numRecs.ToString
 
         Dim client = New RestClient(qryString)
@@ -547,6 +567,10 @@ errorcatch:
         If Len(b) Then succesS = CBool(b) Else succesS = False
 
         If response.IsSuccessful = False Or succesS = False Then
+            If msgResp.ToString = "Invalid access token." Then
+                Call GetToken(qArgs.authInfo)
+                GoTo doOver
+            End If
             Call setError("Error to " + qryString.ToString + " - " + msgResp.ToString + " / " + response.ErrorMessage.ToString)
         End If
 

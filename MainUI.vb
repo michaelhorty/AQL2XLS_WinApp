@@ -7,7 +7,9 @@ Public Class MainUI
     Private loggingEnabled As Boolean
     Private guiActive As Boolean
     Delegate Sub StringArgReturningVoidDelegate([text] As String)
-    Private authInfo As apiAuthInfo
+
+    Public authInfo As apiAuthInfo
+    Private activeToken$
 
     Private jsoN1$
     Private jsoN2$
@@ -32,11 +34,15 @@ Public Class MainUI
         Call multiControls()
         addLOG("GUI Activated")
 
+
         authInfo = New apiAuthInfo
-        With authInfo
-            .fqdN = "https://" + TextBox1.Text + ".armis.com"
-            .secretKey = TextBox2.Text
-        End With
+
+        frmLogin.ShowDialog()
+
+        '  With authInfo
+        '      .fqdN = "https://" + TextBox1.Text + ".armis.com"
+        '      .secretKey = TextBox2.Text
+        '  End With
 
         Dim newClient As New ARMclient(authInfo)
 
@@ -45,10 +51,13 @@ Public Class MainUI
         Else
             'addLOG("Got token")
             addLOG("Token expires: UTC " + authInfo.tokenExpires.ToString("hh:mm:ss"))
+            Call addLoginCreds(authInfo)
         End If
 
         newClient = Nothing
     End Sub
+
+
 
     Private Sub multiControls()
 
@@ -492,7 +501,7 @@ allDone:
 
                 'coL += 1
                 'Next
-                ReDim myXLS3d(deviceS1.Count, 12)
+                ReDim myXLS3d(deviceS1.Count, 16)
 
                 addLOG("Creating Big 3D")
                 rArgs.someColl = New Collection
@@ -510,6 +519,10 @@ allDone:
                     .Add("LastSeen")
                     .Add("ID")
                     .Add("RiskLevel")
+                    .Add("Site Name")
+                    .Add("Site Location")
+                    .Add("Sensor Name")
+                    .Add("Visibility")
                 End With
 
                 For Each D In deviceS1
@@ -529,6 +542,10 @@ allDone:
                         If IsNothing(.lastSeen) = False Then myXLS3d(roW, 10) = .lastSeen.ToString
                         If IsNothing(.id) = False Then myXLS3d(roW, 11) = .id.ToString
                         If IsNothing(.riskLevel) = False Then myXLS3d(roW, 12) = .riskLevel.ToString
+                        If IsNothing(.site) = False Then myXLS3d(roW, 13) = .site.name
+                        If IsNothing(.site) = False Then myXLS3d(roW, 14) = .site.location
+                        If IsNothing(.sensor) = False Then myXLS3d(roW, 15) = .sensor.name
+                        If IsNothing(.visibility) = False Then myXLS3d(roW, 16) = .visibility
                         roW += 1
                     End With
                 Next
@@ -625,6 +642,10 @@ allDone:
             Thread.Sleep(10000)
             Application.DoEvents()
             a$ = AClient.getImageStatus(authInfo, ovaInfo.ovaID.ToString)
+
+            If Len(a) = 0 Then GoTo nextOne
+            If InStr(a, "status") = 0 Then GoTo nextOne
+
             currStatus = AClient.deserializeImageStatus(a)
 
             If InStr(currStatus, "NOT_REQUESTED") Then
@@ -634,6 +655,7 @@ allDone:
 
             addLOG("OVA" + ovaInfo.ovaID.ToString + ": " + currStatus)
 
+nextOne:
         Loop
 
         'a$ = "must have complete here now"
@@ -735,7 +757,36 @@ nothingtoDo:
         btnOVA.Visible = True
     End Sub
 
-    Private Sub TextBox2_TextChanged(sender As Object, e As EventArgs) Handles TextBox2.TextChanged
+    Private Sub TextBox2_TextChanged(sender As Object, e As EventArgs)
+
+    End Sub
+
+    Private Sub PictureBox1_Click(sender As Object, e As EventArgs) Handles PictureBox1.Click
+
+    End Sub
+
+    Private Sub PictureBox1_DoubleClick(sender As Object, e As EventArgs) Handles PictureBox1.DoubleClick
+
+    End Sub
+
+    Private Sub Timer1_Tick(sender As Object, e As EventArgs) Handles Timer1.Tick
+        If Len(authInfo.tokeN) = 0 Then Exit Sub
+
+        If Now.ToUniversalTime > authInfo.tokenExpires Then
+            addLOG("Token refresh")
+
+            Dim newClient As New ARMclient(authInfo)
+
+            If Len(authInfo.tokeN) = 0 Then
+                addLOG("Error getting token:" + newClient.lastError)
+            Else
+                ' addLOG("Got new token - " + authInfo.tokeN)
+                addLOG("New Token expires: UTC " + authInfo.tokenExpires.ToString("hh:mm:ss"))
+                'Call addLoginCreds(authInfo)
+            End If
+
+
+        End If
 
     End Sub
 End Class

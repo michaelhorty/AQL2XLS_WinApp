@@ -42,6 +42,7 @@ Module modXLS
 
         xlWB.RefreshAll()
         xlWS.Columns.AutoFit()
+        appXL.Visible = True
 
         If dontFreeze = False Then
             xlWS.Rows("1:1").Select
@@ -72,7 +73,7 @@ Module modXLS
 
         appXL.DisplayAlerts = True
 
-        appXL.Visible = True
+        '        appXL.Visible = True
 
         '        Do Until Dir(rArgs.s1) = ""
         '            numCopies += 1

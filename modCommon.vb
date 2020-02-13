@@ -20,6 +20,49 @@ Module modCommon
         b = Mid(b, 1, Len(b) - 1)
         Return b$
     End Function
+
+    Public Sub addLoginCreds(ByRef AA As apiAuthInfo)
+        Dim S3 As New Simple3Des("7w6e87twryut24876wuyeg")
+
+        ' if exists, don't add
+        Dim LL As Collection
+        LL = getLogins()
+
+        If grpNDX(LL, AA.fqdN + "|" + S3.Encode(AA.secretKey)) Then Exit Sub
+
+        Dim FF As Integer
+        FF = FreeFile()
+
+        Dim sKey$ = AA.secretKey
+
+            sKey = S3.Encode(sKey)
+
+        FileOpen(FF, "logins", OpenMode.Append)
+        Print(FF, AA.fqdN + "|" + sKey + Chr(13))
+        FileClose(FF)
+
+        S3 = Nothing
+    End Sub
+
+    Public Function getLogins() As Collection
+        getLogins = New Collection
+
+        If Dir("logins") = "" Then Exit Function
+
+        Dim FF As Integer
+        FF = FreeFile()
+        Dim a$
+
+        FileOpen(FF, "logins", OpenMode.Input)
+
+        Do Until EOF(FF) = True
+            a$ = LineInput(FF)
+            If InStr(a, "|") Then getLogins.Add(a)
+        Loop
+
+        FileClose(FF)
+    End Function
+
     Public Sub saveJSONtoFile(jsonString$, ByVal errFN$, ByRef add2zip As Collection)
 
         Dim fileN$ = errFN
@@ -546,7 +589,7 @@ nextLine:
             Dim ms As New System.IO.MemoryStream
             ' Create the decoder to write to the stream. 
             Dim decStream As New CryptoStream(ms,
-                TripleDES.CreateDecryptor(),
+                TripleDes.CreateDecryptor(),
                 System.Security.Cryptography.CryptoStreamMode.Write)
 
             ' Use the crypto stream to write the byte array to the stream.
