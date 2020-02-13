@@ -27,6 +27,8 @@ Public Class MainUI
     Private deviceString As Collection
 
     Private ovaFilename$
+    Private ovaSaveFilename$
+
     Private Sub MainUI_Load(sender As Object, e As EventArgs) Handles MyBase.Load
         ' main entry point
         loggingEnabled = True
@@ -73,6 +75,9 @@ Public Class MainUI
 
 
 forFileOnly:
+        Dim fileOnly As Boolean = False
+        If Mid(a, 1, 3) = "..." Then fileOnly = True
+
         If suppressDT = False Then a = Now.ToString("MM/dd hh:mm:ss") + ": " + a
 
         Dim fileN$ = "armxls_log.txt"
@@ -90,6 +95,8 @@ forFileOnly:
 
         Print(FF, a + vbCrLf)
         FileClose(FF)
+
+        If fileOnly Then Exit Sub
 
 writelineOnly:
         If guiActive = True Then logTEXT(a + vbCrLf)
@@ -213,6 +220,7 @@ errorcatch:
         Dim startReq As DateTime = Now
 
         Dim numQ As Integer = 0
+        Dim pctComplete As Long = 0
 
         lockingObj = False
 
@@ -225,7 +233,8 @@ errorcatch:
             mThreading = getTArgs(qry, nextResultStart, numResultsPerCall)
             ThreadPool.QueueUserWorkItem(w, mThreading)
             numQ += 1
-            QueryContainer1.Label1.Text = "Objects:" + (deviceCompleted.Count * 100).ToString
+            pctComplete = deviceCompleted.Count * numResultsPerCall / tlNum * 100
+            QueryContainer1.Label1.Text = "Objects:" + (deviceCompleted.Count * numResultsPerCall).ToString + " " + pctComplete.ToString("0") + "%"
             Application.DoEvents()
             Thread.Sleep(150)
             Application.DoEvents()
@@ -245,7 +254,8 @@ errorcatch:
 
         Do Until deviceCompleted.Count = device1Nums.Count 'this counter will decrease based on AClient_searchWueryReceived event
             Application.DoEvents()
-            QueryContainer1.Label1.Text = "Objects:" + (deviceCompleted.Count * 100).ToString
+            pctComplete = deviceCompleted.Count * numResultsPerCall / tlNum * 100
+            QueryContainer1.Label1.Text = "Objects:" + (deviceCompleted.Count * 100).ToString + " " + pctComplete.ToString("0") + "%"
             Thread.Sleep(100)
             Application.DoEvents()
             progressSoFar += 100
@@ -437,7 +447,7 @@ allDone:
         Dim j$ = Mid(jsoN, InStr(jsoN, "next") - 1, 20)
         j = Mid(j, 1, InStr(j, ",") - 1)
 
-        addLOG("Rcvd " + firstNum.ToString + ".. processing. JSON: " + j)
+        addLOG("...Rcvd " + firstNum.ToString + ".. processing. JSON: " + j)
         '        threadResults(waitingOnNDX - 1) = jsoN
         deviceString.Add(jsoN)
         If firstNum > 0 Then firstNum = firstNum / 100
@@ -501,9 +511,11 @@ allDone:
 
                 'coL += 1
                 'Next
-                ReDim myXLS3d(deviceS1.Count, 16)
+                addLOG("Discover tags")
+                Dim allTags As Collection
+                allTags = allDeviceTags()
+                addLOG("...NumTags:" + allTags.Count.ToString)
 
-                addLOG("Creating Big 3D")
                 rArgs.someColl = New Collection
                 With rArgs.someColl
                     .Add("Category")
@@ -524,6 +536,15 @@ allDone:
                     .Add("Sensor Name")
                     .Add("Visibility")
                 End With
+
+                frmRptDevice.popListBox(rArgs.someColl, allTags)
+                frmRptDevice.ShowDialog()
+
+
+                ReDim myXLS3d(deviceS1.Count, 16)
+
+                addLOG("Creating 3D obj")
+
 
                 For Each D In deviceS1
                     With D
@@ -551,12 +572,44 @@ allDone:
                 Next
 
 
-                addLOG("Exporting-")
+                addLOG("...Exporting-")
 
                 Call dump2XLS(myXLS3d, roW, rArgs)
         End Select
 
     End Sub
+
+    Private Function allDeviceTags() As Collection
+        allDeviceTags = New Collection
+
+        Dim preSort As New Collection
+
+        For Each D In deviceS1
+            For Each T In D.tags
+                If grpNDX(preSort, T) = 0 Then
+                    preSort.Add(T)
+                End If
+            Next
+        Next
+
+        Dim lv As New ComboBox
+
+        For Each P In preSort
+            lv.Items.Add(P)
+        Next
+
+        lv.Sorted = True
+
+        Dim a$ = ""
+
+        For Each L In lv.Items
+            ' a$ = L     '.ToString
+            allDeviceTags.Add(L)
+        Next
+
+        lv = Nothing
+        GC.Collect()
+    End Function
 
     Private Sub QueryContainer1_MouseLeave(sender As Object, e As EventArgs) Handles QueryContainer1.MouseLeave
 
@@ -639,7 +692,7 @@ allDone:
 
         Do Until InStr(currStatus, "COMPLETE")
             Application.DoEvents()
-            Thread.Sleep(10000)
+            Thread.Sleep(30000)
             Application.DoEvents()
             a$ = AClient.getImageStatus(authInfo, ovaInfo.ovaID.ToString)
 
@@ -666,7 +719,16 @@ downloadIMAGE:
 
         ovaFilename = dlImg
 
-        addLOG("OVA" + ovaInfo.ovaID.ToString + ": " + currStatus)
+        addLOG("OVA" + ovaInfo.ovaID.ToString + ": Created on tenant")
+
+        addLOG("Downloading OVA file..")
+
+        Using client As New WebClient()
+
+            client.DownloadFile(ovaFilename, ovaSaveFilename)
+        End Using
+
+        addLOG("File downloaded and saved to " + ovaSaveFilename)
 
         'MsgBox("Image good for 7 days" + vbCrLf + a, vbOKOnly, "Image created")
     End Sub
@@ -718,8 +780,6 @@ downloadIMAGE:
         Dim ovaDetails As ovaArgs
         ovaDetails = New ovaArgs
 
-        addLOG("Creating new OVA")
-
         With ovaDetails
             .ip = ipAddy
             .netM = netMask
@@ -730,30 +790,22 @@ downloadIMAGE:
             .ovaID = ovaID
         End With
 
-        getOVA.RunWorkerAsync(ovaDetails)
-    End Sub
-
-    Private Sub getOVA_RunWorkerCompleted(sender As Object, e As RunWorkerCompletedEventArgs) Handles getOVA.RunWorkerCompleted
-        If ovaFilename = "" Then GoTo nothingtoDo
-
         Dim O As New SaveFileDialog
         O.Filter = "OVA Files (*.ova)|*.ova|All files (*.*)|*.*"
         O.CheckPathExists = True
         O.Title = "Download Image - Save File As"
         O.ShowDialog()
 
-        addLOG("Downloading file..")
-        Dim remoteUri As String = ovaFilename
-        Dim fileName As String = O.FileName
+        'addLOG("Downloading file..")
+        '        ovaFilename = O.FileName
+        ovaSaveFilename = O.FileName
 
-        Using client As New WebClient()
+        addLOG("Creating new OVA")
 
-            client.DownloadFile(remoteUri, fileName)
-        End Using
+        getOVA.RunWorkerAsync(ovaDetails)
+    End Sub
 
-        addLOG("File downloaded and saved to " + O.FileName)
-        MsgBox("Download complete:" + vbCrLf + O.FileName, vbOKOnly, "Finished")
-nothingtoDo:
+    Private Sub getOVA_RunWorkerCompleted(sender As Object, e As RunWorkerCompletedEventArgs) Handles getOVA.RunWorkerCompleted
         btnOVA.Visible = True
     End Sub
 
@@ -773,15 +825,15 @@ nothingtoDo:
         If Len(authInfo.tokeN) = 0 Then Exit Sub
 
         If Now.ToUniversalTime > authInfo.tokenExpires Then
-            addLOG("Token refresh")
+            'addLOG("Token refresh")
 
             Dim newClient As New ARMclient(authInfo)
 
             If Len(authInfo.tokeN) = 0 Then
-                addLOG("Error getting token:" + newClient.lastError)
+                addLOG("Error refreshing token:" + newClient.lastError)
             Else
                 ' addLOG("Got new token - " + authInfo.tokeN)
-                addLOG("New Token expires: UTC " + authInfo.tokenExpires.ToString("hh:mm:ss"))
+                addLOG("New Token refresh expires: UTC " + authInfo.tokenExpires.ToString("hh:mm:ss"))
                 'Call addLoginCreds(authInfo)
             End If
 

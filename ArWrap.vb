@@ -9,6 +9,7 @@ Public Class ovaArgs
     Public dnS$
     Public proxY$
     Public ovaID$
+    Public saveFilename$
 End Class
 
 Public Class threadingArgs
@@ -273,6 +274,10 @@ Public Class ARMclient
     End Function
 
     Public Function deserializeImageStatus(ByRef jsoN$, Optional ByVal downloadURLonly As Boolean = False) As String
+        If Mid(jsoN, 1, 14) = "COMPLETE LINK:" Then
+            deserializeImageStatus = Mid(jsoN, 15)
+            Exit Function
+        End If
 
         Dim jsonObject As Newtonsoft.Json.Linq.JObject = Newtonsoft.Json.Linq.JObject.Parse(jsoN)
         '        Dim jsonArray As JArray = jsonObject("result")
