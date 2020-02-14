@@ -43,6 +43,10 @@ Module modXLS
         xlWB.RefreshAll()
         xlWS.Columns.AutoFit()
 
+        For colNUM = 1 To F.Count
+            If xlWS.Columns(colNUM).columnwidth > 50 Then xlWS.Columns(colNUM).columnwidth = 50
+        Next
+
         appXL.Visible = True
 
         If dontFreeze = False Then
