@@ -8,6 +8,8 @@ Public Class MainUI
     Private guiActive As Boolean
     Delegate Sub StringArgReturningVoidDelegate([text] As String)
 
+    Private resetRptDeviceForm As Boolean
+
     Public authInfo As apiAuthInfo
     Private activeToken$
 
@@ -78,7 +80,9 @@ forFileOnly:
         Dim fileOnly As Boolean = False
         If Mid(a, 1, 3) = "..." Then fileOnly = True
 
-        If suppressDT = False Then a = Now.ToString("MM/dd hh:mm:ss") + ": " + a
+        '  Dim dtS$ = ""
+        ' ehhhh broke the suppressDT but not sure if i need it
+        ' If suppressDT = False Then a = Now.ToString("MM/dd hh:mm:ss") + ": " + a
 
         Dim fileN$ = "armxls_log.txt"
 
@@ -93,13 +97,13 @@ forFileOnly:
         End If
 
 
-        Print(FF, a + vbCrLf)
+        Print(FF, Now.ToString("MM/dd hh:mm:ss") + ":" + a + vbCrLf)
         FileClose(FF)
 
         If fileOnly Then Exit Sub
 
 writelineOnly:
-        If guiActive = True Then logTEXT(a + vbCrLf)
+        If guiActive = True Then logTEXT(Now.ToString("hh:mm:ss") + ":" + a + vbCrLf)
 errorcatch:
     End Sub
 
@@ -161,6 +165,7 @@ errorcatch:
             QueryContainer2.btnGo.Visible = False
         End If
 
+        resetRptDeviceForm = True
 
         Dim jsonText$ = ""
 
@@ -526,48 +531,62 @@ allDone:
                     .Add("OS")
                     .Add("OS Version")
                     .Add("User")
-                    .Add("IP")
-                    .Add("FirstSeen")
-                    .Add("LastSeen")
+                    .Add("IP Address")
+                    .Add("First Seen")
+                    .Add("Last Seen")
                     .Add("ID")
-                    .Add("RiskLevel")
+                    .Add("Risk Level")
                     .Add("Site Name")
                     .Add("Site Location")
                     .Add("Sensor Name")
                     .Add("Visibility")
                 End With
 
-                frmRptDevice.popListBox(rArgs.someColl, allTags)
-                frmRptDevice.ShowDialog()
+                Dim formRPT As New frmRptDevice
+
+                '                If resetRptDeviceForm = True Then
+                '                    resetRptDeviceForm = False
+                ' need to somehow save state.. formRPT woul dhave to persist outside of this sub
+                formRPT.popListBox(rArgs.someColl, allTags)
+                '               End If
 
 
-                ReDim myXLS3d(deviceS1.Count, 16)
+                formRPT.ShowDialog()
+                If formRPT.userCancelled = True Then
+                    formRPT = Nothing
+                    Exit Sub
+                End If
+
+                rArgs.someColl.Clear()
+                For Each LBsel In formRPT.cbLB.CheckedItems
+                    rArgs.someColl.Add(LBsel)
+                Next
+                Dim tagContain$ = ""
+                tagContain = formRPT.txtTagStr.Text
+                If tagContain = "searchstring" Then tagContain = ""
+
+                Dim showWithTag$ = formRPT.cboTag.Text
+
+                Dim tagStr$ = ""
+
+
+                ReDim myXLS3d(deviceS1.Count, rArgs.someColl.Count)
 
                 addLOG("Creating 3D obj")
 
 
                 For Each D In deviceS1
                     With D
-                        If IsNothing(.category) = False Then myXLS3d(roW, 0) = .category
+                        tagStr = D.tagString
+                        If Len(tagContain) And D.doesTagContain(tagContain) = False Then GoTo skipItem
+                        If Len(showWithTag) And D.doesTagExist(showWithTag) = False Then GoTo skipItem
 
-                        If IsNothing(.macAddress) = False Then myXLS3d(roW, 1) = .macAddress.ToString
-                        If IsNothing(.name) = False Then myXLS3d(roW, 2) = .name
-                        If IsNothing(.manufacturer) = False Then myXLS3d(roW, 3) = .manufacturer
-                        If IsNothing(.model) = False Then myXLS3d(roW, 4) = .model
-                        If IsNothing(.operatingSystem) = False Then myXLS3d(roW, 5) = .operatingSystem
-                        If IsNothing(.operatingSystemVersion) = False Then myXLS3d(roW, 6) = .operatingSystemVersion.ToString
-                        If IsNothing(.user) = False Then myXLS3d(roW, 7) = .user
-
-                        If IsNothing(.ipAddress) = False Then myXLS3d(roW, 8) = .ipAddress.ToString
-                        If IsNothing(.firstSeen) = False Then myXLS3d(roW, 9) = .firstSeen.ToString
-                        If IsNothing(.lastSeen) = False Then myXLS3d(roW, 10) = .lastSeen.ToString
-                        If IsNothing(.id) = False Then myXLS3d(roW, 11) = .id.ToString
-                        If IsNothing(.riskLevel) = False Then myXLS3d(roW, 12) = .riskLevel.ToString
-                        If IsNothing(.site) = False Then myXLS3d(roW, 13) = .site.name
-                        If IsNothing(.site) = False Then myXLS3d(roW, 14) = .site.location
-                        If IsNothing(.sensor) = False Then myXLS3d(roW, 15) = .sensor.name
-                        If IsNothing(.visibility) = False Then myXLS3d(roW, 16) = .visibility
+                        For coL = 0 To rArgs.someColl.Count - 1
+                            myXLS3d(roW, coL) = getDeviceString(D, rArgs.someColl(coL + 1))
+                        Next
                         roW += 1
+skipItem:
+
                     End With
                 Next
 
@@ -577,8 +596,67 @@ allDone:
                 Call dump2XLS(myXLS3d, roW, rArgs)
         End Select
 
+doneHere:
+
     End Sub
 
+    Private Function getDeviceString(ByRef D As deviceData, cellSelect$) As String
+        Dim a$ = ""
+
+        With D
+            Select Case cellSelect
+                Case "Category"
+                    If IsNothing(.category) = False Then a = .category
+                Case "MacAddress"
+
+                    If IsNothing(.macAddress) = False Then a = .macAddress.ToString
+                Case "Name"
+                    If IsNothing(.name) = False Then a = .name
+                Case "Manufacturer"
+                    If IsNothing(.manufacturer) = False Then a = .manufacturer
+                Case "Model"
+                    If IsNothing(.model) = False Then a = .model
+                Case "OS"
+                    If IsNothing(.operatingSystem) = False Then a = .operatingSystem
+                Case "OS Version"
+                    If IsNothing(.operatingSystemVersion) = False Then a = .operatingSystemVersion.ToString
+                Case "User"
+                    If IsNothing(.user) = False Then a = .user
+                Case "IP Address"
+
+                    If IsNothing(.ipAddress) = False Then a = .ipAddress.ToString
+                Case "First Seen"
+                    If IsNothing(.firstSeen) = False Then a = .firstSeen.ToString
+                Case "Last Seen"
+                    If IsNothing(.lastSeen) = False Then a = .lastSeen.ToString
+                Case "ID"
+                    If IsNothing(.id) = False Then a = .id.ToString
+                Case "Risk Level"
+                    If IsNothing(.riskLevel) = False Then a = .riskLevel.ToString
+                Case "Site Name"
+                    If IsNothing(.site) = False Then a = .site.name
+                Case "Site Location"
+                    If IsNothing(.site) = False Then a = .site.location
+                Case "Sensor Name"
+                    If IsNothing(.sensor) = False Then a = .sensor.name
+                Case "Visibility"
+                    If IsNothing(.visibility) = False Then a = .visibility
+
+                Case "Tag List"
+                    a = .tagString
+
+
+            End Select
+
+            If Mid(cellSelect, 1, 4) = "TAG:" Then
+                a = CStr(.doesTagExist(Mid(cellSelect, 5)))
+            End If
+
+
+        End With
+done:
+        Return a
+    End Function
     Private Function allDeviceTags() As Collection
         allDeviceTags = New Collection
 
@@ -839,6 +917,14 @@ downloadIMAGE:
 
 
         End If
+
+    End Sub
+
+    Private Sub QueryContainer2_Load(sender As Object, e As EventArgs) Handles QueryContainer2.Load
+
+    End Sub
+
+    Private Sub QueryContainer2_searchQuery() Handles QueryContainer2.searchQuery
 
     End Sub
 End Class

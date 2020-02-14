@@ -42,6 +42,7 @@ Module modXLS
 
         xlWB.RefreshAll()
         xlWS.Columns.AutoFit()
+
         appXL.Visible = True
 
         If dontFreeze = False Then

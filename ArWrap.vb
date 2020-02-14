@@ -66,10 +66,42 @@ Public Class deviceData
     Public riskLevel As Long
     Public sensor As sensorData
     Public site As siteData
-    Public tags$() ' As deviceTags
+    Public tagS$() ' As deviceTags
     Public type$
     Public user$
     Public visibility$
+
+    Public Function tagString() As String
+        tagString = ""
+        If IsNothing(Me.tags) = True Then Exit Function
+        If Me.tags.Count Then
+            For Each T In Me.tags
+                tagString += T + ","
+            Next
+            tagString = Mid(tagString, 1, Len(tagString) - 1)
+        End If
+    End Function
+
+    Public Function doesTagExist(ByRef tagText$) As Boolean
+        doesTagExist = False
+        For Each T In Me.tagS
+            If LCase(tagText) = LCase(T) Then
+                doesTagExist = True
+                Exit Function
+            End If
+        Next
+    End Function
+
+    Public Function doesTagContain(ByRef tagText$) As Boolean
+        doesTagContain = False
+        For Each T In Me.tagS
+            If InStr(LCase(T), LCase(tagText)) Then
+                doesTagContain = True
+                Exit Function
+            End If
+        Next
+    End Function
+
 
 End Class
 Public Class availOVAresp
